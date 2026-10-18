@@ -1,0 +1,17 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Data and Cache
+kaggle_output/
+*.safetensors
+*.bin
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,13 @@
+{
+  "id": "deepark121/neurocode-heterogeneous-graph-sliced-swe-agent",
+  "title": "NeuroCode: Heterogeneous Graph-Sliced SWE Agent",
+  "code_file": "neurocode_kaggle_benchmark.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "false",
+  "enable_gpu": "true",
+  "enable_internet": "true",
+  "dataset_sources": [],
+  "competition_sources": ["gemma-4-developer-agent-paper"],
+  "kernel_sources": []
+}

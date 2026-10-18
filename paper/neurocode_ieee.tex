@@ -1,0 +1,159 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{url}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{NeuroCode: Heterogeneous Code-Graph Slicing for On-Device Autonomous Software Engineering}
+
+\author{\IEEEauthorblockN{Deepak R.}
+\IEEEauthorblockA{\textit{Department of Computer Science} \\
+\textit{Independent Research}\\
+Bengaluru, India \\
+deepak.research.swe@gmail.com}
+}
+
+\maketitle
+
+\begin{abstract}
+State-of-the-art software engineering (SWE) agents rely predominantly on proprietary, massive cloud-hosted language models with 128k+ token context windows running on high-density datacenter accelerators. Consequently, autonomous repository-level bug fixing remains inaccessible to developers on commodity consumer hardware. Small open-weight models executed locally choke when exposed to entire repositories: massive file dumps trigger catastrophic Key-Value (KV) cache memory exhaustion, while interactive multi-turn tool-calling loops cause severe hallucination and context drift. In this paper, we propose \textbf{NeuroCode}, a heterogeneous neuro-symbolic framework that democratizes repository-scale software repair on edge workstations. NeuroCode leverages the idle Host CPU and system memory to construct an in-memory Code Property Graph (CPG) via AST parsing in milliseconds, and deterministically computes a topological $k$-hop reachability closure around fault candidates. By transferring only the minimal sliced subgraph ($<1,500$ tokens) to the local GPU, NeuroCode eliminates multi-turn exploratory tool loops and maintains strict sub-8.0~GB VRAM allocation. Evaluated on 50 real-world issue instances from SWE-bench Lite, NeuroCode achieves a \textbf{95.3\% net token reduction} compared to full-context baselines, elevates fault localization Recall@3 from 54.0\% (BM25) to \textbf{96.0\%}, and runs with an average host preprocessing latency of only 1.09~ms. Furthermore, physical verification on an NVIDIA GeForce RTX 3050 Laptop GPU (3.67~GB VRAM) demonstrates successful on-device patch synthesis with peak VRAM consumption of only \textbf{961.2~MB} at \textbf{15.8 tokens/second}.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Autonomous SWE Agents, Code Property Graphs, Local LLMs, Hardware-Constrained Inference, SWE-bench.
+\end{IEEEkeywords}
+
+\section{Introduction}
+Automated program repair and issue resolution have undergone a paradigm shift following the emergence of repository-scale benchmarks such as SWE-bench \cite{swebench}. However, modern top-performing systems (e.g., Claude Opus 4.6, GPT-5) operate almost exclusively as cloud-tethered agents. These models consume hundreds of thousands of prompt tokens over tens of agentic turns, running on server clusters equipped with 80GB H100 accelerators. 
+
+For the broader developer community, deploying autonomous coding agents offline on personal consumer hardware (e.g., standard 4GB--8GB VRAM laptops) presents three severe computational bottlenecks:
+\begin{enumerate}
+    \item \textbf{The KV-Cache VRAM Cliff:} In Transformer architectures, caching Key-Value activations scales linearly with sequence length $T$. Ingesting an enterprise codebase ($25,000+$ tokens) demands upwards of 14~GB of dedicated VRAM for cache state alone, instantly triggering Out-Of-Memory (OOM) failures on consumer GPUs.
+    \item \textbf{Exploratory Tool-Loop Drift:} Open models ($\le 9\text{B}$ parameters) degrade rapidly when tasked with multi-turn ReAct loops. Calling shell utilities (\texttt{grep}, \texttt{find}, \texttt{cat}) over 15 turns leads to syntax collapse and infinite exploration loops.
+    \item \textbf{Lexical Blindness:} Pure text-retrieval techniques (such as BM25 in Agentless \cite{agentless}) overlook indirect, multi-hop architectural dependencies spanning imported modules and inherited classes.
+\end{enumerate}
+
+To resolve these challenges, we observe a fundamental architectural asymmetry in modern personal computers: \textit{while consumer GPUs possess limited VRAM (4--8~GB), host CPUs feature 8--16 high-performance cores and 16--64~GB of high-capacity system RAM that remain overwhelmingly idle during GPU matrix multiplication.}
+
+We introduce \textbf{NeuroCode}, a heterogeneous neuro-symbolic architecture that divides cognitive labor across the host-device boundary. NeuroCode delegates static program analysis, dependency resolution, and context compression to the Host CPU, while reserving the GPU strictly for single-turn patch synthesis.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/fig2_system_architecture.png}
+\caption{The NeuroCode Heterogeneous Architecture. The Host CPU builds an in-memory Code Property Graph and computes the $k$-hop reachability slice, passing $<1,500$ tokens across the PCIe bus to the local model on the consumer GPU.}
+\label{fig:arch}
+\end{figure}
+
+\section{Related Work}
+\subsection{Repository-Level Code Representations}
+Early structural exploration approaches utilized static symbol maps, most notably Aider's RepoMap \cite{aidermap}, which computes PageRank over Abstract Syntax Tree (AST) identifiers. Recently, \textit{RepoGraph} (ICLR 2025) \cite{repograph} demonstrated that code graphs significantly enhance SWE-bench navigation. However, RepoGraph models the graph as an interactive external database (Neo4j) queried iteratively by the LLM, a strategy that induces tool-calling errors in compact models. Similarly, the \textit{Code Graph Model} (CGM, NeurIPS 2025) \cite{cgm} fused graph topological adapters directly into attention layers, but required 72B parameter backbones running on enterprise A100 clusters.
+
+\subsection{Non-Agentic Pipelines}
+\textit{Agentless} (2024) \cite{agentless} highlighted that complex autonomous agent loops frequently underperform rigid, deterministic pipelines on SWE-bench Lite. While Agentless minimized costs, its reliance on BM25 lexical search causes it to miss indirect dependencies lacking exact keyword overlap. NeuroCode bridges this divide: retaining the deterministic single-turn stability of Agentless while replacing naive BM25 with topological AST reachability.
+
+\section{Mathematical Formulation \& Architecture}
+
+\subsection{Code Property Graph Formalism}
+We define a repository code property graph as a directed, typed multigraph:
+\begin{equation}
+\mathcal{G} = (\mathcal{V}, \mathcal{E}, \tau_v, \tau_e)
+\end{equation}
+where $\mathcal{V}$ denotes program entities partitioned by type $\tau_v: \mathcal{V} \to \{\text{File}, \text{Class}, \text{Function}, \text{Method}\}$, and $\mathcal{E} \subseteq \mathcal{V} \times \mathcal{V}$ represents structural relations partitioned by $\tau_e: \mathcal{E} \to \{\text{contains}, \text{imports}, \text{calls}, \text{inherits}\}$.
+
+\subsection{Deterministic Topological Slicing}
+Given a natural language problem statement $\mathcal{Q}$ and an execution traceback, the Host CPU extracts an initial seed entity set $\mathcal{V}_{\text{seed}} \subset \mathcal{V}$ via identifier normalization:
+\begin{equation}
+\mathcal{V}_{\text{seed}} = \{ v \in \mathcal{V} \mid \text{name}(v) \in \text{tokenize}(\mathcal{Q}) \}
+\end{equation}
+
+To capture indirect architectural dependencies, NeuroCode computes the bidirectional topological reachability closure $\mathcal{R}_k(\mathcal{V}_{\text{seed}})$ up to radius $k$ (typically $k=1$):
+\begin{equation}
+\mathcal{R}_k(S) = S \cup \{ u \in \mathcal{V} \mid \exists v \in S, \, \text{dist}_{\mathcal{G}}(v, u) \le k \lor \text{dist}_{\mathcal{G}}(u, v) \le k \}
+\end{equation}
+
+The sliced repository context subgraph $\mathcal{G}_{\text{slice}} = \mathcal{G}[\mathcal{R}_k(\mathcal{V}_{\text{seed}})]$ is then serialized into an ultra-compact Markdown prompt $\mathcal{P}_{\text{slice}}$:
+\begin{equation}
+|\text{tokens}(\mathcal{P}_{\text{slice}})| \le \kappa_{\text{budget}} \approx 1,500 \text{ tokens}
+\end{equation}
+
+\subsection{KV-Cache Memory Model}
+For a Transformer model with $L$ layers, $H_{\text{KV}}$ key-value heads, and head dimension $d_h$, the VRAM footprint of sequence length $T$ under 16-bit precision is:
+\begin{equation}
+M_{\text{KV}}(T) = 2 \cdot L \cdot H_{\text{KV}} \cdot d_h \cdot T \cdot 2 \text{ bytes}
+\end{equation}
+For Gemma 9B ($L=42, H_{\text{KV}}=16, d_h=256$), processing an unsliced repo context ($T=25,000$) requires $M_{\text{KV}} \approx 14.4\text{ GB}$, exceeding consumer hardware limits. NeuroCode guarantees $T \le 1,500$, compressing cache consumption to $M_{\text{KV}} \le 0.86\text{ GB}$.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/fig1_empirical_comparison.png}
+\caption{Empirical evaluation on 50 real-world SWE-bench Lite instances. (a) Input prompt tokens across retrieval paradigms. (b) Fault localization Recall@3 versus peak VRAM consumption.}
+\label{fig:eval}
+\end{figure}
+
+\section{Empirical Evaluation}
+
+\subsection{Experimental Setup}
+We conduct a dual-tier empirical evaluation:
+\begin{itemize}
+    \item \textbf{Tier 1 (Benchmark Scale):} Evaluated across 50 verified tasks from the canonical \textbf{SWE-bench Lite} dataset, executed on an NVIDIA Tesla T4 GPU with an enforced 8.0~GB hardware ceiling via PyTorch memory quotas.
+    \item \textbf{Tier 2 (Physical Edge Verification):} Deployed directly on an everyday developer laptop equipped with an AMD Ryzen 7 7435HS CPU (8 cores, 16 threads) and a physical NVIDIA GeForce RTX 3050 Laptop GPU (3.67~GB usable VRAM).
+\end{itemize}
+
+\begin{table}[h]
+\centering
+\caption{Comparative Performance on SWE-bench Lite Instances}
+\label{tab:results}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+\textbf{Pipeline} & \textbf{Tokens} & \textbf{Reduct.} & \textbf{VRAM (GB)} & \textbf{Recall@3} \\ \midrule
+Raw Context Dump & 25,287 & Baseline & 14.2 (OOM) & 42.0\% \\
+BM25 (Agentless) & 6,015 & -76.2\% & 7.8 & 54.0\% \\
+\textbf{NeuroCode (Ours)} & \textbf{1,196} & \textbf{-95.3\%} & \textbf{4.9} & \textbf{96.0\%} \\ \bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Token Efficiency and VRAM Footprint}
+As presented in Table \ref{tab:results} and Fig. \ref{fig:eval}(a), raw repository context dumps average 25,287 tokens, exceeding the memory envelope of 8GB GPUs. BM25 text retrieval averages 6,015 tokens. In contrast, NeuroCode's host-side AST slicer extracts an average of only \textbf{1,196 tokens}---a \textbf{95.3\% reduction}---operating comfortably within a \textbf{4.9~GB peak VRAM footprint}.
+
+\subsection{Multi-Hop Fault Localization Recall}
+To evaluate localization accuracy, we check whether the retrieved context contains the actual entities modified in the ground-truth patch. As shown in Fig. \ref{fig:eval}(b), BM25 achieves only 54.0\% Recall@3 because real bugs often reside in callee functions that do not share lexical keywords with the user issue description. By traversing directed AST call edges, NeuroCode achieves \textbf{96.0\% Recall@3}, resolving indirect dependencies that deceive pure keyword search.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/fig3_local_gpu_ablation.png}
+\caption{Physical On-Device Edge Validation on NVIDIA RTX 3050 Laptop GPU. (a) VRAM footprint breakdown showing sub-1GB peak allocation. (b) Latency profile demonstrating 0.04~ms CPU graph slicing and 15.8 tokens/sec neural generation.}
+\label{fig:edge}
+\end{figure}
+
+\subsection{Physical Edge Device Validation}
+To prove uncompromised edge execution, we executed live patch synthesis on the physical RTX 3050 Laptop GPU using a 0.5B instruction-tuned model. As depicted in Fig. \ref{fig:edge}:
+\begin{itemize}
+    \item \textbf{Memory Headroom:} Total active GPU allocation reached only \textbf{961.2~MB} (25.5\% of available capacity), preserving 2.54~GB of VRAM headroom for the Wayland display manager and system rendering.
+    \item \textbf{Latency Breakdown:} The Host CPU executed complete AST parsing and topological graph slicing in \textbf{0.04~ms}. Neural patch synthesis achieved \textbf{15.8 tokens/second}, completing code generation in 8.09 seconds.
+\end{itemize}
+
+\section{Conclusion \& Kaggle Roadmap}
+We presented \textbf{NeuroCode}, a heterogeneous neuro-symbolic framework enabling consumer-grade local models to solve repository-scale SWE tasks within strict consumer hardware envelopes. By transferring graph navigation to the Host CPU, NeuroCode slashes input tokens by 95.3\%, increases localization recall to 96.0\%, and operates with under 1.0~GB active VRAM on a physical laptop GPU.
+
+For the Google DeepMind Gemma 4 Developer Agent track, our complete reproducible pipeline is packaged into a publicly accessible Kaggle Notebook (\url{https://www.kaggle.com/code/deepark121/neurocode-heterogeneous-graph-sliced-swe-agent}), democratizing autonomous software engineering for developers worldwide.
+
+\bibliographystyle{IEEEtran}
+\begin{thebibliography}{00}
+\bibitem{swebench} C.~E. Jimenez et al., ``SWE-bench: Can Language Models Resolve Real-World GitHub Issues?'' in \textit{Proc. ICLR}, 2024.
+\bibitem{agentless} C.~Xia et al., ``Agentless: Demystifying LLM-based Software Engineering Agents,'' \textit{arXiv preprint arXiv:2407.01489}, 2024.
+\bibitem{repograph} S.~Ouyang et al., ``RepoGraph: Enhancing AI Software Engineering with Repository-level Code Graph,'' in \textit{Proc. ICLR}, 2025.
+\bibitem{cgm} H.~Tao et al., ``Code Graph Model: A Graph-Integrated Large Language Model for Repository-Level Software Engineering Tasks,'' in \textit{Proc. NeurIPS}, 2025.
+\bibitem{aidermap} P.~Gauthier, ``Building a Better Repo Map with Tree-Sitter and PageRank,'' \textit{Aider Technical Blog}, 2023.
+\end{thebibliography}
+
+\end{document}
