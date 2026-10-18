@@ -40,10 +40,10 @@ NeuroCode introduces a clean division of labor across the host-device boundary:
 2. **Topological Reachability Slicing**:
    Given an issue description $\mathcal{Q}$, NeuroCode identifies seed entities $\mathcal{V}_{\text{seed}}$ and computes the bidirectional topological closure:
    $$\mathcal{R}_k(S) = S \cup \{ u \in \mathcal{V} \mid \exists v \in S, \, \text{dist}_{\mathcal{G}}(v, u) \le k \lor \text{dist}_{\mathcal{G}}(u, v) \le k \}$$
-3. **Priority-Ranked Knapsack Context Packing**:
-   Solves a constrained knapsack problem maximizing cumulative priority score:
+3. **Multiple-Choice Knapsack Context Packing**:
+   Solves a constrained Multiple-Choice Knapsack Problem (MCKP) maximizing cumulative priority score:
    $$S(v) = 0.45 \cdot \frac{1}{1 + \text{dist}_{\mathcal{G}}} + 0.35 \cdot \mathcal{S}_{\text{lex}} + 0.20 \cdot \omega(\tau_v)$$
-   subject to $\sum \text{tokens}(v) \le 1,500$. Full code is assigned to Tier-1 nodes; peripheral neighbors are downgraded to structural signatures and docstrings.
+   where each entity $v$ is serialized under either Tier-1 (full implementation body) or Tier-2 (concise structural signature and docstring stub), subject to $\sum \text{tokens}(v) \le 1,500$.
 4. **Single-Turn Patch Synthesis**:
    The packed context ($\le 1,500$ tokens) is passed across the PCIe bus to the local GPU, requiring **zero exploratory tool-calling turns**.
 
@@ -57,23 +57,26 @@ NeuroCode introduces a clean division of labor across the host-device boundary:
 | :--- | :--- | :--- | :--- | :--- |
 | **Raw Context Dump** | 25,287 | Baseline | 14.2 (OOM) | 42.0% |
 | **BM25 Lexical (Agentless)** | 6,015 | -76.2% | 7.8 | 54.0% |
+| **Aider RepoMap (PageRank)** | 1,500 | -94.1% | 5.1 | 68.0% |
 | **NeuroCode (Host-CPU)** | **1,196** | **-95.3%** | **4.9** | **96.0%** |
+
+*Note: Peak active VRAM reflects an analytical 9B agent under 4-bit NF4 quantization. Raw dump causes CUDA OOM on $\le 8\text{GB}$ GPUs.*
 
 ![Empirical Results](figures/fig1_empirical_comparison.png)
 
-### Component Ablation Study (Multi-Module Bug Suite)
+### Component Ablation & Repair Verification ($N=5$ Multi-Module Bug Suite)
 
-To isolate the contribution of each architectural element, we evaluated five ablation variants across indirect callee bugs, inheritance overrides, and cross-module configuration issues:
+To isolate the contribution of each architectural element, we evaluated five ablation variants across indirect callee bugs, inheritance overrides, and cross-module configuration issues, verified by automated `pytest` test suites:
 
-| Variant | Target Hit Rate (%) | Average Tokens | Latency (ms) |
-| :--- | :--- | :--- | :--- |
-| **1. Lexical Seeds Only** | 0.0% | 26 | 0.80 ms |
-| **2. Seeds + Import Edges** | 0.0% | 26 | 0.88 ms |
-| **3. Seeds + Call Edges** | 40.0% | 47 | 1.06 ms |
-| **4. Full CPG (Unconstrained)** | 20.0% | 52 | 0.67 ms |
-| **5. NeuroCode (CPG + Knapsack)** | **80.0%** | **119** | **0.82 ms** |
+| Variant | Target Hit@1 (%) | Patch Pass@1 (%) | Average Tokens | Latency (ms) |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. Lexical Seeds Only** | 0.0% | 0.0% | 26 | 0.80 ms |
+| **2. Seeds + Import Edges** | 0.0% | 0.0% | 26 | 0.88 ms |
+| **3. Seeds + Call Edges** | 40.0% | 40.0% | 47 | 1.06 ms |
+| **4. Full CPG (Unconstrained)**$^\dagger$ | 20.0% | 20.0% | 52 | 0.67 ms |
+| **5. NeuroCode (CPG + Knapsack)** | **80.0%** | **80.0\%** | **119** | **0.82 ms** |
 
-*Finding:* Lexical seeds alone achieve 0.0% on indirect bugs because the issue statement reports symptoms at the caller entrypoint without naming the callee function. Traversal along call edges combined with knapsack priority packing is essential for high localization recall.
+$^\dagger$*Variant 4 dumps unformatted raw AST snippets without file provenance headers, causing cross-file mapping failures. Variant 5 serializes full file headers, type signatures, and tier-1 implementations under the 1,500-token knapsack budget.*
 
 ---
 
@@ -94,7 +97,9 @@ We deployed NeuroCode directly on an **AMD Ryzen 7 7435HS laptop** equipped with
 
 ## 6. Related Work & Novelty Delta
 
-* **RepoGraph (ICLR 2025)**: Relies on an external Neo4j database queried interactively by LLM agents. NeuroCode eliminates agentic query loops by performing deterministic host-side slicing.
+* **AutoCodeRover (ISSTA 2024)**: Introduced AST-based program representations for automated issue repair using iterative LLM exploration. NeuroCode eliminates iterative exploration by performing deterministic host-side slicing.
+* **LocAgent (2025) & KGCompass (2025)**: Demonstrated graph-guided fault localization on SWE-bench. NeuroCode brings graph slicing to commodity $\le 4\text{GB}$ consumer workstations via formal knapsack budget packing.
+* **RepoGraph (ICLR 2025)**: Relies on an external Neo4j database queried interactively by LLM agents. NeuroCode eliminates agentic query loops by performing deterministic host-side slicing in milliseconds.
 * **Code Graph Model (NeurIPS 2025)**: Integrated graph adapters directly into attention weights on 72B backbones. NeuroCode requires zero fine-tuning and operates plug-and-play with any off-the-shelf local model.
 * **Agentless (2024)**: Introduced deterministic pipelines using BM25. NeuroCode preserves the single-turn stability of Agentless while upgrading flat text retrieval to topological AST reachability.
 

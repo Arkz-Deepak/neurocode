@@ -64,10 +64,10 @@ def render_local_gpu_ablation(output_path: Path):
     # Panel (c): Component Ablation Study (Target Retrieval Hit Rate %)
     # -------------------------------------------------------------------------
     variants = [
-        'Lexical Seeds\nOnly',
+        'Lexical\nSeeds',
         'Seeds +\nImports',
         'Seeds +\nCalls',
-        'Full CPG\n(Unconstrained)',
+        'Full CPG\nUnconstr.',
         'NeuroCode\n(Knapsack)'
     ]
     hit_rates = [0.0, 0.0, 40.0, 20.0, 80.0]
@@ -77,6 +77,7 @@ def render_local_gpu_ablation(output_path: Path):
     ax3.set_ylabel('Target Bug Hit Rate (%)', fontsize=10.5, fontweight='bold')
     ax3.set_title('(c) Component Ablation Study\n(Multi-Module Retrieval Success)', fontsize=10.5, fontweight='bold')
     ax3.set_ylim(0, 100)
+    ax3.tick_params(axis='x', labelsize=8.5)
     ax3.grid(axis='y', linestyle='--', alpha=0.5)
 
     for bar, val in zip(b_abl, hit_rates):
