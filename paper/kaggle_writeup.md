@@ -1,7 +1,8 @@
 # NeuroCode: Budget-Constrained Heterogeneous Code-Graph Slicing for Local Software Repair
 
 **Kaggle Writeup for Google DeepMind - The Gemma 4 Developer Agent Paper Track**  
-**Author:** Deepak R. (`wssedd18@gmail.com`)  
+**Author:** Deepak R. (Department of Robotics & Automation Engineering, Dhaanish Ahmed College of Engineering, Anna University)  
+**Email:** `wssedd18@gmail.com` | **Portfolio:** [https://deepak-arkz.me](https://deepak-arkz.me)  
 **Public Code Notebook:** [https://www.kaggle.com/code/deepark121/neurocode-heterogeneous-graph-sliced-swe-agent](https://www.kaggle.com/code/deepark121/neurocode-heterogeneous-graph-sliced-swe-agent)  
 **GitHub Repository:** [https://github.com/Arkz-Deepak/neurocode](https://github.com/Arkz-Deepak/neurocode)  
 **Preprint:** `paper/neurocode_ieee.tex` (Included in Assets)

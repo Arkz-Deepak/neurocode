@@ -66,17 +66,29 @@ pytest tests/
 
 ---
 
+## 👤 Author & Affiliation
+
+* **Author**: **Deepak R.**
+* **Designation**: Department of Robotics & Automation Engineering, Dhaanish Ahmed College of Engineering (Affiliated with Anna University), Chennai, India
+* **Portfolio**: [https://deepak-arkz.me](https://deepak-arkz.me)
+* **Email**: [`wssedd18@gmail.com`](mailto:wssedd18@gmail.com) / [`deepak121289@outlook.com`](mailto:deepak121289@outlook.com)
+* **GitHub**: [@Arkz-Deepak](https://github.com/Arkz-Deepak)
+
+---
+
 ## 📄 Publications & Preprints
 
 * **IEEE Format LaTeX Paper**: [`paper/neurocode_ieee.tex`](paper/neurocode_ieee.tex)
+* **Overleaf Camera-Ready Package**: [`paper/neurocode_overleaf_package.zip`](paper/neurocode_overleaf_package.zip)
 * **Kaggle Competition Writeup**: [`paper/kaggle_writeup.md`](paper/kaggle_writeup.md)
 * **Kaggle Executable Benchmark**: [Kaggle Notebook](https://www.kaggle.com/code/deepark121/neurocode-heterogeneous-graph-sliced-swe-agent)
 
 ### BibTeX
 ```bibtex
 @article{deepak2026neurocode,
-  title={NeuroCode: Heterogeneous Code-Graph Slicing for On-Device Autonomous Software Engineering},
+  title={NeuroCode: Budget-Constrained Heterogeneous Code-Graph Slicing for Local Software Repair},
   author={Deepak, R.},
+  institution={Dhaanish Ahmed College of Engineering, Anna University},
   year={2026},
   url={https://github.com/Arkz-Deepak/neurocode}
 }
