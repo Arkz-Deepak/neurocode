@@ -73,23 +73,35 @@ where $\mathcal{V}$ denotes program entities partitioned by type $\tau_v: \mathc
 \subsection{Deterministic Topological Slicing}
 Given a natural language problem statement $\mathcal{Q}$ and an optional execution traceback, the Host CPU extracts an initial seed entity set $\mathcal{V}_{\text{seed}} \subset \mathcal{V}$ via identifier token normalization:
 \begin{equation}
-\mathcal{V}_{\text{seed}} = \{ v \in \mathcal{V} \mid \text{name}(v) \in \text{tokenize}(\mathcal{Q}) \lor \text{path}(v) \in \text{tokenize}(\mathcal{Q}) \}
+\begin{aligned}
+\mathcal{V}_{\text{seed}} = \{ v \in \mathcal{V} \mid \, &\text{name}(v) \in \text{tokenize}(\mathcal{Q}) \\
+&\lor \text{path}(v) \in \text{tokenize}(\mathcal{Q}) \}
+\end{aligned}
 \end{equation}
 If no exact identifier matches, NeuroCode falls back to top-level entrypoints. To capture indirect architectural dependencies, NeuroCode computes the bidirectional topological reachability closure $\mathcal{R}_k(\mathcal{V}_{\text{seed}})$ up to radius $k$ (default $k=1$):
 \begin{equation}
-\mathcal{R}_k(S) = S \cup \{ u \in \mathcal{V} \mid \exists v \in S, \, \text{dist}_{\mathcal{G}}(v, u) \le k \lor \text{dist}_{\mathcal{G}}(u, v) \le k \}
+\begin{aligned}
+\mathcal{R}_k(S) = S \cup \{ u \in \mathcal{V} \mid \exists v \in S, \, &\text{dist}_{\mathcal{G}}(v, u) \le k \\
+&\lor \text{dist}_{\mathcal{G}}(u, v) \le k \}
+\end{aligned}
 \end{equation}
 
 \subsection{Priority-Ranked Knapsack Budget Packing}
 When the induced subgraph $\mathcal{G}_{\text{slice}} = \mathcal{G}[\mathcal{R}_k(\mathcal{V}_{\text{seed}})]$ contains numerous nodes, naive truncation risks dropping critical dependencies. We formalize context serialization as a constrained 0/1 Knapsack optimization problem. For each entity $v \in \mathcal{R}_k(\mathcal{V}_{\text{seed}})$, we assign a multi-criteria priority score:
 \begin{equation}
-S(v) = w_1 \cdot \frac{1}{1 + \text{dist}_{\mathcal{G}}(v, \mathcal{V}_{\text{seed}})} + w_2 \cdot \mathcal{S}_{\text{lex}}(v, \mathcal{Q}) + w_3 \cdot \omega(\tau_v)
+\begin{aligned}
+S(v) = \;&w_1 \cdot \frac{1}{1 + \text{dist}_{\mathcal{G}}(v, \mathcal{V}_{\text{seed}})} \\
+&+ w_2 \cdot \mathcal{S}_{\text{lex}}(v, \mathcal{Q}) + w_3 \cdot \omega(\tau_v)
+\end{aligned}
 \end{equation}
 where $\mathcal{S}_{\text{lex}}$ is lexical overlap with query tokens, and $\omega(\tau_v)$ assigns structural entity weights ($\text{Function} = 0.9, \text{Class} = 0.7, \text{File} = 0.5$). Weights are set to $w_1=0.45, w_2=0.35, w_3=0.20$.
 
 The context selection maximizes cumulative priority subject to a strict token ceiling $\kappa_{\text{budget}}$:
 \begin{equation}
-\max \sum_{v \in \mathcal{R}_k} S(v) \cdot x_v \quad \text{s.t.} \quad \sum_{v \in \mathcal{R}_k} \text{cost}(v) \cdot x_v \le \kappa_{\text{budget}}
+\begin{aligned}
+\max_{\{x_v\}} \quad &\sum_{v \in \mathcal{R}_k} S(v) \cdot x_v \\
+\text{s.t.} \quad &\sum_{v \in \mathcal{R}_k} \text{cost}(v) \cdot x_v \le \kappa_{\text{budget}}
+\end{aligned}
 \end{equation}
 where $x_v \in \{0, 1\}$ and $\kappa_{\text{budget}} \le 1,500$ tokens. If the budget is exhausted, a two-tier degradation strategy preserves Tier-1 nodes with full implementation bodies while packing Tier-2 peripheral neighbors as concise structural signatures and docstrings.
 
@@ -129,13 +141,15 @@ We conduct a comprehensive empirical evaluation spanning:
 \centering
 \caption{Comparative Context Footprint and Retrieval Performance}
 \label{tab:results}
-\begin{tabular}{@{}lrrrr@{}}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lcccc@{}}
 \toprule
 \textbf{Pipeline} & \textbf{Tokens} & \textbf{Reduct.} & \textbf{VRAM (GB)} & \textbf{Recall@3} \\ \midrule
 Raw Context Dump & 25,287 & Baseline & 14.2 (OOM) & 42.0\% \\
 BM25 (Agentless) & 6,015 & -76.2\% & 7.8 & 54.0\% \\
 \textbf{NeuroCode (Ours)} & \textbf{1,196} & \textbf{-95.3\%} & \textbf{4.9} & \textbf{96.0\%} \\ \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 \subsection{Token Efficiency and VRAM Footprint}
@@ -145,7 +159,8 @@ As presented in Table \ref{tab:results} and Fig. \ref{fig:eval}(a), raw reposito
 \centering
 \caption{Component Ablation Study on Multi-Module Bug Benchmark}
 \label{tab:ablation}
-\begin{tabular}{@{}lrrr@{}}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lccc@{}}
 \toprule
 \textbf{Ablation Variant} & \textbf{Hit@1 (\%)} & \textbf{Avg Tokens} & \textbf{Latency (ms)} \\ \midrule
 1. Lexical Seeds Only & 0.0\% & 26 & 0.80 \\
@@ -153,7 +168,8 @@ As presented in Table \ref{tab:results} and Fig. \ref{fig:eval}(a), raw reposito
 3. Seeds + Call Edges & 40.0\% & 47 & 1.06 \\
 4. Full CPG (Unconstrained) & 20.0\% & 52 & 0.67 \\
 \textbf{5. NeuroCode (CPG + Knapsack)} & \textbf{80.0\%} & \textbf{119} & \textbf{0.82} \\ \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 \subsection{Component Ablation Study}
