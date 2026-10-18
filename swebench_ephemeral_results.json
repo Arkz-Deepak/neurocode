@@ -1,0 +1,228 @@
+[
+  {
+    "instance_id": "pallets__flask-4045",
+    "repo": "pallets/flask",
+    "base_commit": "d8c37f43724cd9fb0870f77877b7c4c7e38a19e0",
+    "target_files": [
+      "src/flask/blueprints.py"
+    ],
+    "target_symbols": [
+      "def __init__(",
+      "def add_url_rule("
+    ],
+    "bm25_hit": false,
+    "bm25_tokens": 12221,
+    "bm25_latency_ms": 14.277488000516314,
+    "repomap_hit": false,
+    "repomap_tokens": 1499,
+    "repomap_latency_ms": 8.693326999491546,
+    "neurocode_file_hit": true,
+    "neurocode_symbol_hit": false,
+    "neurocode_tokens": 1368,
+    "neurocode_nodes": 862,
+    "neurocode_edges": 1345,
+    "neurocode_subgraph_nodes": 81,
+    "cpg_build_ms": 132.11541599957854,
+    "slicing_ms": 6.369211998389801
+  },
+  {
+    "instance_id": "pallets__flask-4992",
+    "repo": "pallets/flask",
+    "base_commit": "4c288bc97ea371817199908d0d9b12de9dae327e",
+    "target_files": [
+      "src/flask/config.py"
+    ],
+    "target_symbols": [
+      "def from_file("
+    ],
+    "bm25_hit": false,
+    "bm25_tokens": 13695,
+    "bm25_latency_ms": 31.859859001997393,
+    "repomap_hit": false,
+    "repomap_tokens": 1499,
+    "repomap_latency_ms": 9.205234997352818,
+    "neurocode_file_hit": true,
+    "neurocode_symbol_hit": false,
+    "neurocode_tokens": 1229,
+    "neurocode_nodes": 885,
+    "neurocode_edges": 1402,
+    "neurocode_subgraph_nodes": 133,
+    "cpg_build_ms": 92.81794799971976,
+    "slicing_ms": 10.811085001478205
+  },
+  {
+    "instance_id": "pallets__flask-5063",
+    "repo": "pallets/flask",
+    "base_commit": "182ce3dd15dfa3537391c3efaf9c3ff407d134d4",
+    "target_files": [
+      "src/flask/cli.py"
+    ],
+    "target_symbols": [
+      "def shell_command() -> None:"
+    ],
+    "bm25_hit": false,
+    "bm25_tokens": 13604,
+    "bm25_latency_ms": 30.5513150015031,
+    "repomap_hit": false,
+    "repomap_tokens": 1499,
+    "repomap_latency_ms": 9.578609002346639,
+    "neurocode_file_hit": false,
+    "neurocode_symbol_hit": false,
+    "neurocode_tokens": 1202,
+    "neurocode_nodes": 886,
+    "neurocode_edges": 1403,
+    "neurocode_subgraph_nodes": 161,
+    "cpg_build_ms": 131.2256580022222,
+    "slicing_ms": 17.611404000490438
+  },
+  {
+    "instance_id": "psf__requests-1963",
+    "repo": "psf/requests",
+    "base_commit": "110048f9837f8441ea536804115e80b69f400277",
+    "target_files": [
+      "requests/sessions.py"
+    ],
+    "target_symbols": [
+      "def resolve_redirects(self, resp, req, stream=False, timeout=None,"
+    ],
+    "bm25_hit": true,
+    "bm25_tokens": 5187,
+    "bm25_latency_ms": 24.039536001509987,
+    "repomap_hit": true,
+    "repomap_tokens": 1499,
+    "repomap_latency_ms": 8.141570000589127,
+    "neurocode_file_hit": true,
+    "neurocode_symbol_hit": false,
+    "neurocode_tokens": 1236,
+    "neurocode_nodes": 865,
+    "neurocode_edges": 1516,
+    "neurocode_subgraph_nodes": 56,
+    "cpg_build_ms": 142.4008040012268,
+    "slicing_ms": 8.777973998803645
+  },
+  {
+    "instance_id": "psf__requests-2148",
+    "repo": "psf/requests",
+    "base_commit": "fe693c492242ae532211e0c173324f09ca8cf227",
+    "target_files": [
+      "requests/models.py"
+    ],
+    "target_symbols": [
+      "def generate():"
+    ],
+    "bm25_hit": false,
+    "bm25_tokens": 6651,
+    "bm25_latency_ms": 44.387591999111464,
+    "repomap_hit": true,
+    "repomap_tokens": 1500,
+    "repomap_latency_ms": 8.726739000849193,
+    "neurocode_file_hit": true,
+    "neurocode_symbol_hit": false,
+    "neurocode_tokens": 1312,
+    "neurocode_nodes": 938,
+    "neurocode_edges": 1648,
+    "neurocode_subgraph_nodes": 40,
+    "cpg_build_ms": 182.5006660001236,
+    "slicing_ms": 4.237799999827985
+  },
+  {
+    "instance_id": "psf__requests-2317",
+    "repo": "psf/requests",
+    "base_commit": "091991be0da19de9108dbe5e3752917fea3d7fdc",
+    "target_files": [
+      "requests/sessions.py"
+    ],
+    "target_symbols": [
+      "def request(self, method, url,"
+    ],
+    "bm25_hit": false,
+    "bm25_tokens": 6942,
+    "bm25_latency_ms": 28.64320799926645,
+    "repomap_hit": true,
+    "repomap_tokens": 1498,
+    "repomap_latency_ms": 8.648863000416895,
+    "neurocode_file_hit": false,
+    "neurocode_symbol_hit": false,
+    "neurocode_tokens": 1613,
+    "neurocode_nodes": 956,
+    "neurocode_edges": 1695,
+    "neurocode_subgraph_nodes": 107,
+    "cpg_build_ms": 146.42731200001435,
+    "slicing_ms": 12.37055199817405
+  },
+  {
+    "instance_id": "psf__requests-2674",
+    "repo": "psf/requests",
+    "base_commit": "0be38a0c37c59c4b66ce908731da15b401655113",
+    "target_files": [
+      "requests/adapters.py"
+    ],
+    "target_symbols": [
+      "def send(self, request, stream=False, timeout=None, verify=True, cert=None, prox"
+    ],
+    "bm25_hit": false,
+    "bm25_tokens": 7450,
+    "bm25_latency_ms": 21.107075997861102,
+    "repomap_hit": true,
+    "repomap_tokens": 1500,
+    "repomap_latency_ms": 9.485403999860864,
+    "neurocode_file_hit": false,
+    "neurocode_symbol_hit": false,
+    "neurocode_tokens": 1601,
+    "neurocode_nodes": 1015,
+    "neurocode_edges": 1811,
+    "neurocode_subgraph_nodes": 94,
+    "cpg_build_ms": 194.73395100067137,
+    "slicing_ms": 8.131308000884019
+  },
+  {
+    "instance_id": "psf__requests-3362",
+    "repo": "psf/requests",
+    "base_commit": "36453b95b13079296776d11b09cab2567ea3e703",
+    "target_files": [
+      "requests/utils.py"
+    ],
+    "target_symbols": [
+      "def get_encoding_from_headers(headers):"
+    ],
+    "bm25_hit": false,
+    "bm25_tokens": 7743,
+    "bm25_latency_ms": 26.947476999339415,
+    "repomap_hit": true,
+    "repomap_tokens": 1500,
+    "repomap_latency_ms": 10.193436999543337,
+    "neurocode_file_hit": true,
+    "neurocode_symbol_hit": true,
+    "neurocode_tokens": 1485,
+    "neurocode_nodes": 1126,
+    "neurocode_edges": 1936,
+    "neurocode_subgraph_nodes": 69,
+    "cpg_build_ms": 163.11171399865998,
+    "slicing_ms": 6.95978400108288
+  },
+  {
+    "instance_id": "psf__requests-863",
+    "repo": "psf/requests",
+    "base_commit": "a0df2cbb10419037d11d04352b3175405ab52941",
+    "target_files": [
+      "requests/models.py"
+    ],
+    "target_symbols": [
+      "def path_url(self):"
+    ],
+    "bm25_hit": false,
+    "bm25_tokens": 7024,
+    "bm25_latency_ms": 43.829412999912165,
+    "repomap_hit": true,
+    "repomap_tokens": 1500,
+    "repomap_latency_ms": 13.255646001198329,
+    "neurocode_file_hit": true,
+    "neurocode_symbol_hit": false,
+    "neurocode_tokens": 1326,
+    "neurocode_nodes": 1044,
+    "neurocode_edges": 1777,
+    "neurocode_subgraph_nodes": 65,
+    "cpg_build_ms": 284.0788059984334,
+    "slicing_ms": 6.1876959989604075
+  }
+]

@@ -15,20 +15,36 @@ class CodeGraphSlicer:
 
     def find_seed_nodes(self, query: str) -> List[str]:
         """Finds candidate seed nodes from an issue description or traceback via lexical normalization."""
-        tokens = set(query.lower().replace("(", " ").replace(")", " ").replace(":", " ").replace(".", " ").replace("/", " ").split())
-        seed_nodes = []
+        stopwords = {
+            "get", "set", "the", "and", "for", "with", "from", "that", "this", "file", "line",
+            "code", "def", "class", "import", "return", "true", "false", "none", "self", "args",
+            "kwargs", "test", "issue", "bug", "error", "fail", "pass", "call", "type", "name",
+            "str", "int", "list", "dict", "user", "run", "in", "to", "of", "is", "it", "on", "a",
+            "an", "by", "as", "at", "if", "or", "not", "be", "are", "was", "were", "when", "how"
+        }
+        tokens = {
+            t for t in query.lower().replace("(", " ").replace(")", " ").replace(":", " ").replace(".", " ").replace("/", " ").replace("_", " ").split()
+            if len(t) > 2 and t not in stopwords
+        }
+        scored_seeds = []
 
         for node, data in self.graph.nodes(data=True):
             node_type = data.get("type")
             name = (data.get("name") or "").lower()
             if node_type in ("function", "method", "class") and name:
-                if name in tokens:
-                    seed_nodes.append(node)
+                parts = set(name.split("_"))
+                overlap = len(parts.intersection(tokens))
+                if name in tokens or overlap > 0:
+                    weight = 2.0 if name in tokens else (0.5 * overlap)
+                    scored_seeds.append((node, weight))
             elif node_type == "file":
                 path = (data.get("path") or "").lower()
-                if path and (path in query.lower() or any(t == path.split("/")[-1] for t in tokens)):
-                    seed_nodes.append(node)
+                if path and any(t in path for t in tokens):
+                    scored_seeds.append((node, 1.0))
 
+        scored_seeds.sort(key=lambda x: x[1], reverse=True)
+        # Retain top-6 most relevant seeds to prevent combinatorial explosion
+        seed_nodes = [node for node, _ in scored_seeds[:6]]
         return list(dict.fromkeys(seed_nodes))
 
     def extract_subgraph(self, seed_nodes: List[str], k_hops: int = 1) -> nx.DiGraph:
@@ -133,7 +149,7 @@ class CodeGraphSlicer:
             if node_type == "file":
                 continue
 
-            if node in primary_seeds or (current_token_count + full_code_tokens <= effective_max_tokens and full_code_tokens < 400):
+            if (current_token_count + full_code_tokens <= effective_max_tokens) and (node in primary_seeds or full_code_tokens < 350):
                 # Tier 1: Full implementation
                 entity_repr = {
                     "tier": "FULL",
