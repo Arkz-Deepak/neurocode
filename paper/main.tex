@@ -150,18 +150,18 @@ We conduct a comprehensive empirical evaluation spanning:
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 \textbf{Pipeline} & \textbf{Tokens} & \textbf{Reduct.} & \textbf{VRAM (GB)} & \textbf{Recall@3} \\ \midrule
-Raw Context Dump & 25,287 & Baseline & 14.2 (OOM) & 42.0\% \\
-BM25 (Agentless) \cite{agentless} & 6,015 & -76.2\% & 7.8 & 54.0\% \\
-Aider RepoMap (PageRank) \cite{aidermap} & 1,500 & -94.1\% & 5.1 & 68.0\% \\
-\textbf{NeuroCode (Ours)} & \textbf{1,196} & \textbf{-95.3\%} & \textbf{4.9} & \textbf{96.0\%} \\ \bottomrule
+Raw Context Dump & 24,500 & Baseline & 14.2 (OOM) & 42.0\%$^\dagger$ \\
+BM25 (Agentless) \cite{agentless} & 27,633 & +12.8\% & 14.9 (OOM) & 2.0\% \\
+Aider RepoMap (PageRank) \cite{aidermap} & 1,500 & -93.9\% & 5.1 & 10.0\% \\
+\textbf{NeuroCode (Ours)} & \textbf{796} & \textbf{-96.8\%} & \textbf{4.9} & \textbf{14.0\%} \\ \bottomrule
 \end{tabular}%
 }
 \vspace{1mm}
-\footnotesize{\textit{Note: Peak active VRAM reflects an analytical 9B agent under 4-bit NF4 quantization. Raw dump causes CUDA OOM on $\le 8\text{GB}$ GPUs.}}
+\footnotesize{\textit{Note: Peak active VRAM reflects an analytical 9B agent under 4-bit NF4 quantization. Raw and BM25 whole-file dumps cause CUDA OOM on $\le 8\text{GB}$ GPUs. $^\dagger$Analytical estimate.}}
 \end{table}
 
 \subsection{Token Efficiency and VRAM Footprint}
-As presented in Table \ref{tab:results} and Fig. \ref{fig:eval}(a), raw repository context dumps average 25,287 tokens, triggering OOM on consumer GPUs. BM25 text retrieval averages 6,015 tokens, and Aider's PageRank RepoMap averages 1,500 tokens (68.0\% Recall@3). In contrast, NeuroCode's host-side AST slicer extracts an average of only \textbf{1,196 tokens}---a \textbf{95.3\% net reduction}---operating comfortably within a \textbf{4.9~GB peak VRAM footprint} for 9B models and \textbf{961.2~MB} for 0.5B models, while boosting Recall@3 to \textbf{96.0\%}.
+As presented in Table \ref{tab:results} and Fig. \ref{fig:eval}(a), raw repository context dumps average 24,500 tokens, triggering OOM on consumer GPUs. BM25 whole-file retrieval averages 27,633 tokens due to multi-thousand-line module ingestion (2.0\% Recall@3), and Aider's PageRank RepoMap averages 1,500 tokens (10.0\% Recall@3). In contrast, NeuroCode's host-side AST slicer extracts an average of only \textbf{796 tokens}---a \textbf{96.8\% net reduction}---operating comfortably within a \textbf{4.9~GB peak VRAM footprint} for 9B models and \textbf{1,157.8~MB} for 1.5B 4-bit edge models, while delivering \textbf{14.0\% Recall@3} across monolithic codebases and \textbf{66.7\%} on modular architectures.
 
 \begin{table}[h]
 \centering
