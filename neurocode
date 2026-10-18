@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# NeuroCode CLI Launcher
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON_BIN="${SCRIPT_DIR}/.venv/bin/python3"
+
+if [ ! -f "$PYTHON_BIN" ]; then
+    PYTHON_BIN="python3"
+fi
+
+exec "$PYTHON_BIN" "${SCRIPT_DIR}/src/cli.py" "$@"
