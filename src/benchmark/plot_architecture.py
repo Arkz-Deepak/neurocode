@@ -43,12 +43,12 @@ def render_system_architecture(output_path: Path):
     ax.add_patch(gpu_box)
     ax.text(7.4, 5.1, "DEVICE ACCELERATOR (GPU < 8GB VRAM)", ha="center", fontsize=11, fontweight="bold", color="#b7950b")
 
-    # Gemma Agent Box
+    # Local Edge LLM Agent Box
     gemma_box = patches.FancyBboxPatch((5.6, 2.2), 3.6, 2.4, boxstyle="round,pad=0.1",
                                        facecolor="#e67e22", edgecolor="#ba4a00", linewidth=1.5)
     ax.add_patch(gemma_box)
-    ax.text(7.4, 4.1, "Local Gemma 4 Developer Agent", ha="center", fontsize=10.5, fontweight="bold", color="white")
-    ax.text(7.4, 3.6, "Inference via Ollama / vLLM", ha="center", fontsize=8.5, color="#fef9e7")
+    ax.text(7.4, 4.1, "Local Edge LLM Agent", ha="center", fontsize=10.5, fontweight="bold", color="white")
+    ax.text(7.4, 3.6, "(Qwen2.5-Coder / Gemma 2)", ha="center", fontsize=8.5, fontweight="bold", color="#fef9e7")
     ax.text(7.4, 3.1, "- Zero Tool-Calling Loops", ha="center", fontsize=8.5, color="#fef9e7")
     ax.text(7.4, 2.65, "- Strict sub-2k token prompt", ha="center", fontsize=8.5, color="#fef9e7")
 

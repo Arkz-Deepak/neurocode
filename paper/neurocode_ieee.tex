@@ -12,7 +12,15 @@
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
+\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\floatsep}{8pt plus 2pt minus 2pt}
+\setlength{\intextsep}{8pt plus 2pt minus 2pt}
+\setlength{\abovecaptionskip}{4pt plus 1pt minus 1pt}
+\setlength{\belowcaptionskip}{4pt plus 1pt minus 1pt}
+
 \begin{document}
+\setlength{\abovedisplayskip}{4pt plus 1pt minus 1pt}
+\setlength{\belowdisplayskip}{4pt plus 1pt minus 1pt}
 
 \title{NeuroCode: Budget-Constrained Heterogeneous Code-Graph Slicing for Local Software Repair}
 
@@ -221,13 +229,14 @@ The NeuroCode implementation, AST graph builders, knapsack slicer, and multi-mod
 
 \bibliographystyle{IEEEtran}
 \begin{thebibliography}{00}
+\setlength{\itemsep}{1.5pt plus 0.5pt minus 0.5pt}
 \bibitem{swebench} C.~E. Jimenez et al., ``SWE-bench: Can Language Models Resolve Real-World GitHub Issues?'' in \textit{Proc. Int. Conf. Learn. Represent. (ICLR)}, 2024.
-\bibitem{agentless} C.~Xia and L.~Zhang, ``Agentless: Demystifying LLM-based Software Engineering Agents,'' in \textit{Proc. ACM Int. Conf. Found. Softw. Eng. (FSE)}, 2024.
+\bibitem{agentless} C.~S. Xia, Y.~Deng, S.~Dunn, and L.~Zhang, ``Agentless: Demystifying LLM-based Software Engineering Agents,'' \textit{arXiv preprint arXiv:2407.01489}, 2024.
 \bibitem{autocoderover} Y.~Zhang, H.~Ruan, Z.~Fan, and A.~Roychoudhury, ``AutoCodeRover: Autonomous Program Improvement,'' in \textit{Proc. ACM SIGSOFT Int. Symp. Softw. Test. Anal. (ISSTA)}, 2024.
-\bibitem{locagent} X.~Tang, Z.~Yuan, and Y.~Zhang, ``LocAgent: Graph-Guided Agent for Fault Localization in Software Repositories,'' \textit{arXiv preprint arXiv:2503.09089}, 2025.
-\bibitem{kgcompass} H.~Tian, B.~Yang, Y.~Liu, and J.~Klein, ``KGCompass: Knowledge Graph Guided Exploration for Repository-Level Bug Localization,'' \textit{arXiv preprint arXiv:2503.21710}, 2025.
-\bibitem{graphcodeagent} J.~Li, G.~Li, and Z.~Jin, ``GraphCodeAgent: Graph-Enhanced Code Agents for Repository Software Repair,'' \textit{arXiv preprint arXiv:2504.10046}, 2025.
-\bibitem{cosil} S.~Chen, M.~Wen, and H.~Sun, ``CoSIL: Context-Sensitive Iterative Localization for Repository-Scale Bug Fixing,'' \textit{arXiv preprint arXiv:2503.22424}, 2025.
+\bibitem{locagent} Z.~Chen, X.~Tang, G.~Deng, F.~Wu, J.~Wu, Z.~Jiang, V.~Prasanna, A.~Cohan, and X.~Wang, ``LocAgent: Graph-Guided LLM Agents for Code Localization,'' \textit{arXiv preprint arXiv:2503.09089}, 2025.
+\bibitem{kgcompass} B.~Yang, H.~Tian, J.~Ren, S.~Jin, Y.~Liu, F.~Liu, and B.~Le, ``Enhancing Repository-Level Software Repair via Repository-Aware Knowledge Graphs,'' \textit{arXiv preprint arXiv:2503.21710}, 2025.
+\bibitem{graphcodeagent} J.~Li, X.~Shi, K.~Zhang, G.~Li, Z.~Jin, L.~Li, H.~Zhang, F.~Liu, Y.~Zhang, Z.~Tao, Y.~Dong, Y.~Zhu, and C.~Tao, ``GraphCodeAgent: Dual Graph-Guided LLM Agent for Retrieval-Augmented Repo-Level Code Generation,'' \textit{arXiv preprint arXiv:2504.10046}, 2025.
+\bibitem{cosil} Z.~Jiang, X.~Ren, M.~Yan, W.~Jiang, Y.~Li, and Z.~Liu, ``Issue Localization via LLM-Driven Iterative Code Graph Searching,'' \textit{arXiv preprint arXiv:2503.22424}, 2025.
 \bibitem{repograph} S.~Ouyang et al., ``RepoGraph: Enhancing AI Software Engineering with Repository-level Code Graph,'' in \textit{Proc. Int. Conf. Learn. Represent. (ICLR)}, 2025.
 \bibitem{cgm} H.~Tao et al., ``Code Graph Model: A Graph-Integrated Large Language Model for Repository-Level Software Engineering Tasks,'' in \textit{Proc. Adv. Neural Inf. Process. Syst. (NeurIPS)}, 2025.
 \bibitem{aidermap} P.~Gauthier, ``Building a Better Repo Map with Tree-Sitter and PageRank,'' \textit{Aider Technical Report}, 2023.
