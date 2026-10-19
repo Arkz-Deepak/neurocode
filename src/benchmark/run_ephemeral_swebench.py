@@ -123,11 +123,12 @@ class EphemeralSWEBenchRunner:
     def _clone_repo(self, repo_url: str, base_commit: str, target_dir: str) -> bool:
         """Performs blobless clone directly into RAM disk."""
         try:
+            git_cmd = ["git", "-c", "url.git@github.com:.insteadOf="]
             res = subprocess.run(
-                ["git", "clone", "--filter=blob:none", repo_url, target_dir],
+                git_cmd + ["clone", "--filter=blob:none", repo_url, target_dir],
                 capture_output=True,
                 text=True,
-                timeout=120
+                timeout=180
             )
             if res.returncode != 0:
                 return False
