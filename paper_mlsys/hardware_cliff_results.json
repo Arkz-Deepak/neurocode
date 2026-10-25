@@ -1,0 +1,194 @@
+{
+  "hardware": {
+    "gpu_name": "NVIDIA GeForce RTX 3050 Laptop GPU",
+    "total_vram_mb": 3761.75,
+    "base_model_weights_mb": 2920.0
+  },
+  "normal_agent": [
+    {
+      "seq_len": 500,
+      "status": "SUCCESS",
+      "peak_vram_mb": 2939.55419921875,
+      "power_w": 10.3,
+      "latency_ms": 42.55409300003521
+    },
+    {
+      "seq_len": 1000,
+      "status": "SUCCESS",
+      "peak_vram_mb": 2959.1083984375,
+      "power_w": 11.0,
+      "latency_ms": 2.153372000066156
+    },
+    {
+      "seq_len": 1500,
+      "status": "SUCCESS",
+      "peak_vram_mb": 2980.57666015625,
+      "power_w": 11.0,
+      "latency_ms": 2.21553200026392
+    },
+    {
+      "seq_len": 2000,
+      "status": "SUCCESS",
+      "peak_vram_mb": 2999.154296875,
+      "power_w": 11.52,
+      "latency_ms": 3.143811999962054
+    },
+    {
+      "seq_len": 3000,
+      "status": "SUCCESS",
+      "peak_vram_mb": 3037.3251953125,
+      "power_w": 12.3,
+      "latency_ms": 6.212039999809349
+    },
+    {
+      "seq_len": 5000,
+      "status": "SUCCESS",
+      "peak_vram_mb": 3119.29150390625,
+      "power_w": 12.3,
+      "latency_ms": 16.14477800012537
+    },
+    {
+      "seq_len": 8000,
+      "status": "OOM_CRASH",
+      "peak_vram_mb": 3761.75,
+      "power_w": 35.0,
+      "latency_ms": 25.8096430002297
+    },
+    {
+      "seq_len": 12000,
+      "status": "OOM_CRASH",
+      "peak_vram_mb": 3761.75,
+      "power_w": 35.0,
+      "latency_ms": 2.1870569999009604
+    },
+    {
+      "seq_len": 16000,
+      "status": "OOM_CRASH",
+      "peak_vram_mb": 3761.75,
+      "power_w": 35.0,
+      "latency_ms": 1.931786999648466
+    },
+    {
+      "seq_len": 20000,
+      "status": "OOM_CRASH",
+      "peak_vram_mb": 3761.75,
+      "power_w": 35.0,
+      "latency_ms": 2.400627000042732
+    },
+    {
+      "seq_len": 25000,
+      "status": "OOM_CRASH",
+      "peak_vram_mb": 3761.75,
+      "power_w": 35.0,
+      "latency_ms": 1.9524459999047394
+    },
+    {
+      "seq_len": 30000,
+      "status": "OOM_CRASH",
+      "peak_vram_mb": 3761.75,
+      "power_w": 35.0,
+      "latency_ms": 2.037118999851373
+    },
+    {
+      "seq_len": 35000,
+      "status": "OOM_CRASH",
+      "peak_vram_mb": 3761.75,
+      "power_w": 35.0,
+      "latency_ms": 2.487834000021394
+    }
+  ],
+  "neurocode_agent": [
+    {
+      "seq_len": 500,
+      "status": "SUCCESS",
+      "peak_vram_mb": 2961.25244140625,
+      "power_w": 10.3,
+      "latency_ms": 1.4342420004140877
+    },
+    {
+      "seq_len": 1000,
+      "status": "SUCCESS",
+      "peak_vram_mb": 2961.25244140625,
+      "power_w": 11.0,
+      "latency_ms": 1.4176099998621794
+    },
+    {
+      "seq_len": 1500,
+      "status": "SUCCESS",
+      "peak_vram_mb": 2961.25244140625,
+      "power_w": 11.52,
+      "latency_ms": 1.4195240000844933
+    },
+    {
+      "seq_len": 2000,
+      "status": "SUCCESS",
+      "peak_vram_mb": 2961.25244140625,
+      "power_w": 11.52,
+      "latency_ms": 1.6839810000419675
+    },
+    {
+      "seq_len": 3000,
+      "status": "SUCCESS",
+      "peak_vram_mb": 2961.25244140625,
+      "power_w": 12.3,
+      "latency_ms": 1.576023999859899
+    },
+    {
+      "seq_len": 5000,
+      "status": "SUCCESS",
+      "peak_vram_mb": 2961.25244140625,
+      "power_w": 13.64,
+      "latency_ms": 1.4453129997491487
+    },
+    {
+      "seq_len": 8000,
+      "status": "SUCCESS",
+      "peak_vram_mb": 3253.53955078125,
+      "power_w": 13.64,
+      "latency_ms": 1.3153639997653954
+    },
+    {
+      "seq_len": 12000,
+      "status": "SUCCESS",
+      "peak_vram_mb": 3253.53955078125,
+      "power_w": 13.64,
+      "latency_ms": 1.134656999965955
+    },
+    {
+      "seq_len": 16000,
+      "status": "SUCCESS",
+      "peak_vram_mb": 3253.53955078125,
+      "power_w": 13.92,
+      "latency_ms": 1.106874000015523
+    },
+    {
+      "seq_len": 20000,
+      "status": "SUCCESS",
+      "peak_vram_mb": 3253.53955078125,
+      "power_w": 13.92,
+      "latency_ms": 1.1351379998814082
+    },
+    {
+      "seq_len": 25000,
+      "status": "SUCCESS",
+      "peak_vram_mb": 3253.53955078125,
+      "power_w": 13.92,
+      "latency_ms": 1.1136969997096458
+    },
+    {
+      "seq_len": 30000,
+      "status": "SUCCESS",
+      "peak_vram_mb": 3253.53955078125,
+      "power_w": 14.57,
+      "latency_ms": 1.1132069998893712
+    },
+    {
+      "seq_len": 35000,
+      "status": "SUCCESS",
+      "peak_vram_mb": 3253.53955078125,
+      "power_w": 14.57,
+      "latency_ms": 1.1213220000172441
+    }
+  ],
+  "oom_cliff_token": 8000
+}

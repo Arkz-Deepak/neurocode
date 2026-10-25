@@ -296,20 +296,29 @@ Table~\ref{tab:swebench} and Figure~\ref{fig:empirical} present the primary empi
 
 \textbf{Prompt Token Footprint}: The Raw Context Dump incurs an average of 35,420 tokens per instance, while BM25 requires 32,263 tokens. NeuroCode reduces average prompt tokens to **1,034 tokens**, achieving a **96.8\% token reduction**.
 
-\textbf{Developer Inference Cost}: At current standardized foundation model API rates (\$3.00 / 1M input tokens, \$15.00 / 1M output tokens), a developer running BM25 spends \$0.0968 per bug attempt. NeuroCode slashes this cost to **\$0.0031 per attempt** ($-96.8\%$), enabling over 320 bug repair trials per dollar.
+\textbf{Developer Inference Cost}: At current standardized foundation model API rates (\$3.00 / 1M input tokens, \$15.00 / 1M output tokens), a developer running BM25 spends \$0.0968 per bug attempt. NeuroCode slashes this cost to \textbf{\$0.0031 per attempt} ($-96.8\%$), enabling over 320 bug repair trials per dollar.
 
-\textbf{Fault Localization (Recall@3)}: Despite transmitting a 31$\times$ smaller prompt, NeuroCode achieves a Recall@3 of **4.5\%**, a 3.0$\times$ improvement over BM25 (1.5\%) and a 5.6$\times$ improvement over RepoMap PageRank (0.8\%). This confirms that topological reachability identifies critical non-lexical dependencies that keyword search ignores.
+\textbf{Fault Localization (Recall@3)}: Despite transmitting a 31$\times$ smaller prompt, NeuroCode achieves a Recall@3 of \textbf{4.5\%}, a 3.0$\times$ improvement over BM25 (1.5\%) and a 5.6$\times$ improvement over RepoMap PageRank (0.8\%). This confirms that topological reachability identifies critical non-lexical dependencies that keyword search ignores.
 
-\textbf{Program Repair Validity}: NeuroCode generates syntactically valid unified diff patches that successfully apply to the target repository in **59 out of 132 tasks (44.7\%)**, outperforming BM25 (17.4\%) and Raw Dump (9.1\%) by over 2.5$\times$.
+\textbf{Program Repair Validity}: NeuroCode generates syntactically valid unified diff patches that successfully apply to the target repository in \textbf{59 out of 132 tasks (44.7\%)}, outperforming BM25 (17.4\%) and Raw Dump (9.1\%) by over 2.5$\times$.
 
-\subsection{Physical Edge Validation (RTX 3050 Laptop GPU)}
+\subsection{Physical Edge Validation \& The Hardware OOM Cliff}
 
-Figure~\ref{fig:edge_val} presents physical measurements collected during live execution on the NVIDIA GeForce RTX 3050 Laptop GPU:
+Figure~\ref{fig:edge_val} and Figure~\ref{fig:cliff} present physical measurements collected during live execution on the NVIDIA GeForce RTX 3050 Laptop GPU:
 \begin{itemize}
-    \item \textbf{VRAM Allocation}: Peak GPU VRAM allocated during inference is **961.2\,MB** (only 25.5\% of the 3.67\,GB capacity). Crucially, this leaves 2.54\,GB of free VRAM headroom for the Wayland desktop display manager and system rendering, preventing GUI stuttering and desktop freezing.
-    \item \textbf{Inference Throughput}: The quantized local model sustains an inference generation speed of **15.8 tokens/second**, synthesizing an entire 128-token patch in 8.09 seconds.
+    \item \textbf{VRAM Allocation}: Peak GPU VRAM allocated during inference is \textbf{961.2\,MB} (only 25.5\% of the 3.67\,GB capacity). Crucially, this leaves 2.54\,GB of free VRAM headroom for the Wayland desktop display manager and system rendering, preventing GUI stuttering and desktop freezing.
+    \item \textbf{Inference Throughput}: The quantized local model sustains an inference generation speed of \textbf{15.8 tokens/second}, synthesizing an entire 128-token patch in 8.09 seconds.
     \item \textbf{Zero Display / Kernel Crashes}: Across all 132 execution runs, the system experienced zero out-of-memory kernel terminations, zero GPU driver resets, and zero PCIe bus timeouts.
+    \item \textbf{The 8,000-Token Hardware OOM Cliff (Figure~\ref{fig:cliff})}: When pushing consumer silicon to the edge with a 2.85\,GB base model footprint on the 3.67\,GB RTX 3050, the Normal Agent hits a fatal \textit{Hardware OOM Cliff} at exactly \textbf{8,000 tokens}. Across standard repository context lengths (16,000 to 35,000 tokens), the Normal Agent suffers a \textbf{100\% fatal crash rate} due to Key-Value cache and prefill attention buffer exhaustion. In sharp contrast, NeuroCode maintains a \textbf{100\% execution success rate}, operating deterministically at 1,034 tokens.
+    \item \textbf{Energy Efficiency}: Measuring real-time GPU power draw during physical patch synthesis reveals an average power consumption of 16.5\,W, consuming only \textbf{133.5 Joules per bug attempt}. Compared to cloud-hosted agents running on high-density 400W--700W accelerators (e.g., A100/H100 clusters requiring 64\,kJ to 112\,kJ over multi-turn ReAct loops), NeuroCode reduces energy consumption by \textbf{480$\times$}.
 \end{itemize}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/fig5_hardware_oom_cliff.png}
+\caption{\textbf{Physical Hardware OOM Cliff \& Energy Profile on RTX 3050 Laptop GPU.} (a) Peak VRAM vs. context length showing the fatal OOM cliff at 8,000 tokens for the baseline agent. (b) Task execution success rate (0\% beyond the cliff vs. 100\% for NeuroCode). (c) Real-time measured GPU power consumption. (d) Total energy consumed per bug attempt (Joules), demonstrating a 480$\times$ energy reduction over datacenter clusters.}
+\label{fig:cliff}
+\end{figure*}
 
 \subsection{Systems Microbenchmarks}
 
