@@ -31,6 +31,14 @@
 % Running title
 \mlsystitlerunning{NeuroCode: Heterogeneous Host-Device Co-Scheduling for Memory-Bounded SWE Agents}
 
+% Float placement parameters to prevent queue congestion and spillage
+\renewcommand{\topfraction}{0.95}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.85}
+\renewcommand{\dbltopfraction}{0.95}
+\renewcommand{\dblfloatpagefraction}{0.85}
+
 \begin{document}
 
 \twocolumn[
@@ -155,7 +163,10 @@ Given an issue report $\mathcal{Q}$, NeuroCode identifies a seed entity set $\ma
 
 \textbf{Bidirectional Topological Closure}: A software bug is rarely isolated to a single function; it depends on callers (upstream control flow) and callees (downstream execution flow). For a given seed set $S$, we define the $k$-hop bidirectional topological closure $\mathcal{R}_k(S)$ as:
 \begin{equation}
-\mathcal{R}_k(S) = S \cup \{ u \in \mathcal{V} \mid \exists v \in S, \, \text{dist}_{\mathcal{G}}(v, u) \le k \lor \text{dist}_{\mathcal{G}}(u, v) \le k \}
+\begin{split}
+\mathcal{R}_k(S) = S \cup \{ u \in \mathcal{V} \mid \exists v \in S, \, & \text{dist}_{\mathcal{G}}(v, u) \le k \\
+& \lor \, \text{dist}_{\mathcal{G}}(u, v) \le k \}
+\end{split}
 \end{equation}
 
 \textbf{Knapsack Formulation}: Let $w(u)$ denote the token cost of node $u$ when serialized into its structural AST skeleton. To guarantee that the GPU KV cache remains within a tight, bounded hardware envelope, we enforce a strict prompt budget $B_{\text{GPU}}$ (e.g., $B_{\text{GPU}} \le 1{,}500$ tokens).
@@ -172,7 +183,7 @@ The utility function $\mathcal{U}(u, \mathcal{Q})$ is defined as:
 \begin{equation}
 \mathcal{U}(u, \mathcal{Q}) = \alpha \cdot \exp\left(-\lambda \cdot d(u, \mathcal{V}_{\text{seed}})\right) + (1 - \alpha) \cdot \frac{\text{deg}(u)}{|\mathcal{V}|}
 \end{equation}
-where $d(u, \mathcal{V}_{\text{seed}}) = \min_{v \in \mathcal{V}_{\text{seed}}} \min(\text{dist}_{\mathcal{G}}(v, u), \text{dist}_{\mathcal{G}}(u, v))$, $\text{deg}(u)$ is the degree centrality of node $u$, $\lambda$ is a distance decay parameter ($\lambda = 0.5$), and $\alpha \in [0, 1]$ balances topological proximity against architectural importance.
+where $d(u, \mathcal{V}_{\text{seed}}) = \min_{v \in \mathcal{V}_{\text{seed}}} \min(\text{dist}(v, u), \text{dist}(u, v))$, $\text{deg}(u)$ is the degree centrality of node $u$, $\lambda$ is a distance decay parameter ($\lambda = 0.5$), and $\alpha \in [0, 1]$ balances topological proximity against architectural importance.
 
 \begin{algorithm}[t]
 \caption{Host-Side Topological Knapsack Slicer}
@@ -235,6 +246,7 @@ The local LLM synthesizes a unified diff patch in a \textbf{single generation tu
 \small
 \caption{\textbf{Comprehensive Empirical Evaluation on SWE-bench Lite ($N = 132$ Verified Instances).} NeuroCode slashes prompt token footprint by 96.8\% and cuts developer API costs by 96.8\% while tripling fault localization Recall@3 over lexical baselines.}
 \label{tab:swebench}
+\resizebox{\textwidth}{!}{
 \begin{tabular}{lcccccc}
 \toprule
 \textbf{Pipeline / Method} & \textbf{Average Prompt} & \textbf{Token} & \textbf{Inference Cost} & \textbf{Cost} & \textbf{Localization} & \textbf{Valid Patches} \\
@@ -246,6 +258,7 @@ RepoMap (PageRank / Aider) & 14,810 & -58.2\% & \$0.0444 & -58.2\% & 0.8\% & 31 
 \textbf{NeuroCode (Host-CPU Slicing)} & \textbf{1,034} & \textbf{-96.8\%} & \textbf{\$0.0031} & \textbf{-96.8\%} & \textbf{4.5\% (3.0$\times$)} & \textbf{59 / 132 (44.7\%)} \\
 \bottomrule
 \end{tabular}
+}
 \end{table*}
 
 \section{Empirical Evaluation}
@@ -277,13 +290,6 @@ We evaluate NeuroCode to answer four core systems questions:
     \item \textbf{RepoMap (PageRank)}: Global symbol dependency graph ranked via PageRank as used in Aider~\cite{aider2024repomap}.
 \end{enumerate}
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.88\textwidth]{figures/fig3_local_gpu_ablation_4x3.png}
-\caption{\textbf{Physical Edge Validation on NVIDIA RTX 3050 Laptop GPU (3.67\,GB VRAM).} (Top-Left) VRAM allocation breakdown showing 2.54\,GB of preserved display headroom. (Top-Right) End-to-end latency benchmarks. (Bottom-Left) Slicing depth ablation. (Bottom-Right) Inference cost comparison.}
-\label{fig:edge_val}
-\end{figure*}
-
 \subsection{SWE-bench Lite Benchmark Results}
 
 Table~\ref{tab:swebench} and Figure~\ref{fig:empirical} present the primary empirical results across all 132 benchmark tasks.
@@ -298,18 +304,18 @@ Table~\ref{tab:swebench} and Figure~\ref{fig:empirical} present the primary empi
 
 \subsection{Physical Edge Validation \& The Hardware OOM Cliff}
 
-Figure~\ref{fig:edge_val} and Figure~\ref{fig:cliff} present physical measurements collected during live execution on the NVIDIA GeForce RTX 3050 Laptop GPU:
+Figure~\ref{fig:cliff} presents physical measurements collected during live execution on the NVIDIA GeForce RTX 3050 Laptop GPU:
 \begin{itemize}
     \item \textbf{VRAM Allocation}: Peak GPU VRAM allocated during inference is \textbf{961.2\,MB} (only 25.5\% of the 3.67\,GB capacity). Crucially, this leaves 2.54\,GB of free VRAM headroom for the Wayland desktop display manager and system rendering, preventing GUI stuttering and desktop freezing.
     \item \textbf{Inference Throughput}: The quantized local model sustains an inference generation speed of \textbf{15.8 tokens/second}, synthesizing an entire 128-token patch in 8.09 seconds.
     \item \textbf{Zero Display / Kernel Crashes}: Across all 132 execution runs, the system experienced zero out-of-memory kernel terminations, zero GPU driver resets, and zero PCIe bus timeouts.
-    \item \textbf{The 8,000-Token Hardware OOM Cliff (Figure~\ref{fig:cliff})}: When pushing consumer silicon to the edge with a 2.85\,GB base model footprint on the 3.67\,GB RTX 3050, the Normal Agent hits a fatal \textit{Hardware OOM Cliff} at exactly \textbf{8,000 tokens}. Across standard repository context lengths (16,000 to 35,000 tokens), the Normal Agent suffers a \textbf{100\% fatal crash rate} due to Key-Value cache and prefill attention buffer exhaustion. In sharp contrast, NeuroCode maintains a \textbf{100\% execution success rate}, operating deterministically at 1,034 tokens.
-    \item \textbf{Energy Efficiency}: Measuring real-time GPU power draw during physical patch synthesis reveals an average power consumption of 16.5\,W, consuming only \textbf{133.5 Joules per bug attempt}. Compared to cloud-hosted agents running on high-density 400W--700W accelerators (e.g., A100/H100 clusters requiring 64\,kJ to 112\,kJ over multi-turn ReAct loops), NeuroCode reduces energy consumption by \textbf{480$\times$}.
+    \item \textbf{The 8,000-Token Hardware OOM Cliff (Figure~\ref{fig:cliff}a, b)}: When pushing consumer silicon to the edge with a 2.85\,GB base model footprint on the 3.67\,GB RTX 3050, the Normal Agent hits a fatal \textit{Hardware OOM Cliff} at exactly \textbf{8,000 tokens}. Across standard repository context lengths (16,000 to 35,000 tokens), the Normal Agent suffers a \textbf{100\% fatal crash rate} due to Key-Value cache and prefill attention buffer exhaustion. In sharp contrast, NeuroCode maintains a \textbf{100\% execution success rate}, operating deterministically at 1,034 tokens.
+    \item \textbf{Energy Efficiency (Figure~\ref{fig:cliff}c, d)}: Measuring real-time GPU power draw during physical patch synthesis reveals an average power consumption of 16.5\,W, consuming only \textbf{133.5 Joules per bug attempt}. Compared to cloud-hosted agents running on high-density 400W--700W accelerators (e.g., A100/H100 clusters requiring 64\,kJ to 112\,kJ over multi-turn ReAct loops), NeuroCode reduces energy consumption by \textbf{480$\times$}.
 \end{itemize}
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.92\textwidth]{figures/fig5_hardware_oom_cliff.png}
+\includegraphics[width=0.86\textwidth]{figures/fig5_hardware_oom_cliff.png}
 \caption{\textbf{Physical Hardware OOM Cliff \& Energy Profile on RTX 3050 Laptop GPU.} (a) Peak VRAM vs. context length showing the fatal OOM cliff at 8,000 tokens for the baseline agent. (b) Task execution success rate (0\% beyond the cliff vs. 100\% for NeuroCode). (c) Real-time measured GPU power consumption. (d) Total energy consumed per bug attempt (Joules), demonstrating a 480$\times$ energy reduction over datacenter clusters.}
 \label{fig:cliff}
 \end{figure*}
@@ -318,7 +324,7 @@ Figure~\ref{fig:edge_val} and Figure~\ref{fig:cliff} present physical measuremen
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.92\textwidth]{figures/fig4_systems_microbenchmarks.png}
+\includegraphics[width=0.86\textwidth]{figures/fig4_systems_microbenchmarks.png}
 \caption{\textbf{MLSys Systems Microbenchmarking Suite.} (a) End-to-end execution latency across pipeline stages (log scale). (b) KV-Cache memory wall model comparing 2B and 9B backbones. (c) Host CPU knapsack slicing latency across token budgets. (d) PCIe host-to-device transfer latency vs. payload size.}
 \label{fig:microbench}
 \end{figure*}
@@ -333,26 +339,25 @@ Figure~\ref{fig:microbench} presents the microbenchmarking suite measuring hardw
 
 \textbf{PCIe Host-to-Device Transfer (Figure~\ref{fig:microbench}d)}: Transferring NeuroCode's 4\,KB sliced markdown prompt requires only 24.7\,$\mu$s, achieving 0.17\,GB/s effective bandwidth. In contrast, transferring an uncompressed 140\,KB dump takes 37.1\,$\mu$s.
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.86\textwidth]{figures/fig5_systems_scaling_suite.png}
+\caption{\textbf{Comprehensive Systems Scaling Suite \& Retrieval Comparison.} (a) Host CPU parsing throughput and speedup on AMD Ryzen 7 7435HS. (b) Topological reachability depth sensitivity ($k$-hop) vs. token consumption. (c) Storage I/O write wear on developer laptop NVMe SSD vs. \texttt{/dev/shm} tmpfs. (d) Fault localization Recall@1: Dense Vector RAG (\texttt{all-MiniLM-L6-v2}) vs. NeuroCode (CPG Knapsack).}
+\label{fig:scaling_suite}
+\end{figure*}
+
 \subsection{Dense Vector RAG Comparison \& Factorial Ablation}
 
-\textbf{Dense Vector RAG vs. Topological Slicing (Figure~\ref{fig:dense_rag})}: A common hypothesis in semantic code search is that standard dense embedding retrieval (e.g., LangChain / ChromaDB with MiniLM or BGE embeddings) can substitute for graph slicing. Our empirical comparison reveals two fatal shortcomings of dense vector embeddings:
+\textbf{Dense Vector RAG vs. Topological Slicing (Figure~\ref{fig:scaling_suite}d)}: A common hypothesis in semantic code search is that standard dense embedding retrieval (e.g., LangChain / ChromaDB with MiniLM or BGE embeddings) can substitute for graph slicing. Our empirical comparison reveals two fatal shortcomings of dense vector embeddings:
 \begin{enumerate}
     \item \textbf{Semantic Blindness to Call Graphs}: Dense embeddings calculate cosine similarity between natural language problem statements and code chunk tokens. However, the root cause of a defect often resides in an unannotated callee or overridden base class that shares near-zero textual similarity with the bug description. As a result, Dense Vector RAG achieves only \textbf{40.0\% Recall@1}, whereas NeuroCode achieves \textbf{100.0\% Recall@1} by following AST call edges.
     \item \textbf{Embedding Latency Penalty}: Computing forward passes through an embedding model over thousands of repository chunks requires \textbf{100.8\,ms} on average. NeuroCode builds and slices the native Tree-sitter Code Property Graph in \textbf{1.03\,ms}---a \textbf{97.9$\times$ latency advantage} executed entirely on the Host CPU.
 \end{enumerate}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/fig6_dense_vector_rag_comparison.png}
-\caption{\textbf{Dense Vector RAG vs. NeuroCode Comparison.} (a) Context token footprint. (b) Fault localization Recall@3 across BM25, Dense Vector RAG, and NeuroCode.}
-\label{fig:dense_rag}
-\end{figure}
-
-\begin{table}[t]
+\begin{table}[b]
 \centering
 \small
-\caption{\textbf{Factorial Component Ablation Study.} Evaluating the necessity of each architectural component across localization hit rate and token consumption.}
-\label{tab:ablation}
+\resizebox{\columnwidth}{!}{
 \begin{tabular}{lccc}
 \toprule
 \textbf{Ablation Variant} & \textbf{Hit@1 (\%)} & \textbf{Tokens} & \textbf{Latency} \\
@@ -364,6 +369,9 @@ Figure~\ref{fig:microbench} presents the microbenchmarking suite measuring hardw
 \textbf{5. NeuroCode (CPG + Knapsack)} & \textbf{100.0\%} & \textbf{169} & \textbf{0.87\,ms} \\
 \bottomrule
 \end{tabular}
+}
+\caption{\textbf{Factorial Component Ablation Study.} Evaluating the necessity of each architectural component across localization hit rate and token consumption.}
+\label{tab:ablation}
 \end{table}
 
 \textbf{Component Ablation Analysis (Table~\ref{tab:ablation})}: Table~\ref{tab:ablation} systematically disables individual modules of the NeuroCode pipeline. When relying solely on lexical seeds (Variant 1) or individual edge types (Variants 2 and 3), localization Hit@1 drops to \textbf{0.0\%} on complex transitive tasks. Furthermore, unconstrained graph inclusion (Variant 4) causes context pollution. Only the full heterogeneous Code Property Multigraph paired with value-density knapsack packing (Variant 5) achieves 100\% localization while provably bounding token consumption.
@@ -375,17 +383,10 @@ Figure~\ref{fig:scaling_suite} and Table~\ref{tab:multimodel} summarize the comp
     \item \textbf{Host CPU Multithreading Throughput (Figure~\ref{fig:scaling_suite}a)}: On the AMD Ryzen 7 7435HS Host CPU, in-memory Tree-sitter parsing achieves a throughput of \textbf{7,702.0 files/second}. Parsing 100 repository modules completes in only 12.98\,ms, demonstrating that host-side AST graph construction introduces virtually zero developer latency overhead.
     \item \textbf{Topological Reachability Sensitivity (Figure~\ref{fig:scaling_suite}b)}: Sweeping slicing depth $k \in [0, 4]$ demonstrates that $k=0$ (seeds only) achieves only 80.0\% hit rate. Expanding to $k=1$ immediately unlocks \textbf{100.0\% target hit rate} at an average of only \textbf{169 tokens}. Further expansions ($k \in [2, 4]$) yield bounded token growth ($\le 200$ tokens), confirming the stability of the knapsack token budget constraint.
     \item \textbf{Zero-Wear Hardware I/O Protection (Figure~\ref{fig:scaling_suite}c)}: Traditional SWE agents write over \textbf{31.6\,GB} of temporary git checkouts, environments, and tool dumps directly to the developer's NVMe SSD across 132 benchmark tasks. NeuroCode executes entirely in-memory within system RAM tmpfs (\texttt{/dev/shm}), incurring \textbf{0.0\,GB of NVMe SSD write wear} while achieving a \textbf{6.52$\times$ I/O throughput speedup} (2,588.8\,MB/s vs. 397.3\,MB/s).
-    \item \textbf{Multi-Model Generalization (Table~\ref{tab:multimodel} and Figure~\ref{fig:scaling_suite}d)}: We benchmark NeuroCode across four foundation model backbones. When ingesting raw context dumps, all models exceeding 0.5B parameters trigger \textbf{fatal GPU out-of-memory crashes} on edge silicon. Under NeuroCode, every model operates stably within its respective hardware tier, reaching a \textbf{52.8\% valid patch rate} on Gemma-2-9B.
+    \item \textbf{Multi-Model Generalization (Table~\ref{tab:multimodel})}: We benchmark NeuroCode across four foundation model backbones. When ingesting raw context dumps, all models exceeding 0.5B parameters trigger \textbf{fatal GPU out-of-memory crashes} on edge silicon. Under NeuroCode, every model operates stably within its respective hardware tier, reaching a \textbf{52.8\% valid patch rate} on Gemma-2-9B.
 \end{itemize}
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.92\textwidth]{figures/fig7_systems_scaling_suite.png}
-\caption{\textbf{Comprehensive Systems Scaling Suite.} (a) Host CPU parsing throughput and speedup on AMD Ryzen 7. (b) Topological reachability depth sensitivity ($k$-hop). (c) Storage I/O wear on developer laptop NVMe SSD vs. \texttt{/dev/shm} tmpfs. (d) Peak VRAM across foundation model architectures.}
-\label{fig:scaling_suite}
-\end{figure*}
-
-\begin{table}[t]
+\begin{table}[b]
 \centering
 \small
 \resizebox{\columnwidth}{!}{
