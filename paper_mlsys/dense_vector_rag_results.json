@@ -1,0 +1,22 @@
+{
+  "dense_vector_rag": {
+    "avg_tokens": 89,
+    "recall_at_1_pct": 40.0,
+    "recall_at_3_pct": 100.0,
+    "file_recall_pct": 100.0,
+    "avg_latency_ms": 100.83
+  },
+  "bm25_lexical": {
+    "avg_tokens": 132,
+    "recall_at_3_pct": 100.0,
+    "file_recall_pct": 100.0,
+    "avg_latency_ms": 0.19
+  },
+  "neurocode": {
+    "avg_tokens": 229,
+    "recall_at_1_pct": 100.0,
+    "recall_at_3_pct": 100.0,
+    "file_recall_pct": 100.0,
+    "avg_latency_ms": 1.03
+  }
+}
