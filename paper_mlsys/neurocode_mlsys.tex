@@ -23,7 +23,7 @@
 }
 
 % Attempt to make hyperref and algorithmic work together better
-\newcommand{\theHalgorithm}{\arabic{algorithm}}
+\providecommand{\theHalgorithm}{\arabic{algorithm}}
 
 % Use MLSys 2025 style (defaults to double-blind submission)
 \usepackage{mlsys2025}
@@ -196,7 +196,7 @@ where $d(u, \mathcal{V}_{\text{seed}}) = \min_{v \in \mathcal{V}_{\text{seed}}} 
     \ENDIF
 \ENDFOR
 \STATE $\mathcal{M} \leftarrow \text{FormatMarkdown}(S_{\text{selected}})$
-\RETURN $\mathcal{M}$
+\STATE \textbf{return} $\mathcal{M}$
 \end{algorithmic}
 \end{algorithm}
 
@@ -284,18 +284,11 @@ We evaluate NeuroCode to answer four core systems questions:
 \label{fig:edge_val}
 \end{figure*}
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.92\textwidth]{figures/fig4_systems_microbenchmarks.png}
-\caption{\textbf{MLSys Systems Microbenchmarking Suite.} (a) End-to-end execution latency across pipeline stages (log scale). (b) KV-Cache memory wall model comparing 2B and 9B backbones. (c) Host CPU knapsack slicing latency across token budgets. (d) PCIe host-to-device transfer latency vs. payload size.}
-\label{fig:microbench}
-\end{figure*}
-
 \subsection{SWE-bench Lite Benchmark Results}
 
 Table~\ref{tab:swebench} and Figure~\ref{fig:empirical} present the primary empirical results across all 132 benchmark tasks.
 
-\textbf{Prompt Token Footprint}: The Raw Context Dump incurs an average of 35,420 tokens per instance, while BM25 requires 32,263 tokens. NeuroCode reduces average prompt tokens to **1,034 tokens**, achieving a **96.8\% token reduction**.
+\textbf{Prompt Token Footprint}: The Raw Context Dump incurs an average of 35,420 tokens per instance, while BM25 requires 32,263 tokens. NeuroCode reduces average prompt tokens to \textbf{1,034 tokens}, achieving a \textbf{96.8\% token reduction}.
 
 \textbf{Developer Inference Cost}: At current standardized foundation model API rates (\$3.00 / 1M input tokens, \$15.00 / 1M output tokens), a developer running BM25 spends \$0.0968 per bug attempt. NeuroCode slashes this cost to \textbf{\$0.0031 per attempt} ($-96.8\%$), enabling over 320 bug repair trials per dollar.
 
@@ -322,6 +315,13 @@ Figure~\ref{fig:edge_val} and Figure~\ref{fig:cliff} present physical measuremen
 \end{figure*}
 
 \subsection{Systems Microbenchmarks}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/fig4_systems_microbenchmarks.png}
+\caption{\textbf{MLSys Systems Microbenchmarking Suite.} (a) End-to-end execution latency across pipeline stages (log scale). (b) KV-Cache memory wall model comparing 2B and 9B backbones. (c) Host CPU knapsack slicing latency across token budgets. (d) PCIe host-to-device transfer latency vs. payload size.}
+\label{fig:microbench}
+\end{figure*}
 
 Figure~\ref{fig:microbench} presents the microbenchmarking suite measuring hardware-level timings and memory scaling:
 

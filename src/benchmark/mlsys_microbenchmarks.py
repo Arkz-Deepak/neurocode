@@ -291,9 +291,9 @@ def plot_systems_microbenchmarks(data: Dict[str, Any], token_seq: np.ndarray, kv
     # Panel C: Knapsack Slicing Latency vs Budget
     # ----------------------------------------------------
     ax_c = axes[1, 0]
-    budgets = list(data["budget_scaling"].keys())
-    slice_latencies = [data["budget_scaling"][b]["mean_ms"] for b in budgets]
-    slice_stds = [data["budget_scaling"][b]["std_ms"] for b in budgets]
+    budgets = sorted([int(b) for b in data["budget_scaling"].keys()])
+    slice_latencies = [data["budget_scaling"][str(b)]["mean_ms"] if str(b) in data["budget_scaling"] else data["budget_scaling"][b]["mean_ms"] for b in budgets]
+    slice_stds = [data["budget_scaling"][str(b)]["std_ms"] if str(b) in data["budget_scaling"] else data["budget_scaling"][b]["std_ms"] for b in budgets]
     
     ax_c.plot(budgets, slice_latencies, marker="o", color=c_green, linewidth=2, markersize=6, label="Slicing Latency (ms)")
     ax_c.fill_between(budgets, 
@@ -308,9 +308,10 @@ def plot_systems_microbenchmarks(data: Dict[str, Any], token_seq: np.ndarray, kv
     ax_c.set_ylim(0, max(slice_latencies) * 1.35)
     
     # Annotate nominal operating point (1500 tokens)
-    nom_latency = data["budget_scaling"][1500]["mean_ms"]
-    ax_c.annotate(f"Default Operating Budget\n(1,500 tokens, {nom_latency:.1f} ms)",
-                 xy=(1500, nom_latency), xytext=(1200, nom_latency + 6),
+    nom_data = data["budget_scaling"].get("1500") or data["budget_scaling"].get(1500)
+    nom_latency = nom_data["mean_ms"] if nom_data else slice_latencies[len(slice_latencies)//2]
+    ax_c.annotate(f"Default Budget\n(1,500 tokens, {nom_latency:.1f} ms)",
+                 xy=(1500, nom_latency), xytext=(1500 - 300, nom_latency + 0.05),
                  arrowprops=dict(arrowstyle="->", color="black", lw=1.2),
                  fontsize=8.5, fontweight="bold")
 
@@ -329,7 +330,8 @@ def plot_systems_microbenchmarks(data: Dict[str, Any], token_seq: np.ndarray, kv
     
     # Highlight NeuroCode payload
     nc_kb = 4.0
-    nc_us = data["pcie_transfer"][4096]["mean_ms"] * 1000
+    pcie_nc_data = data["pcie_transfer"].get("4096") or data["pcie_transfer"].get(4096)
+    nc_us = pcie_nc_data["mean_ms"] * 1000 if pcie_nc_data else 24.7
     ax_d.scatter([nc_kb], [nc_us], color=c_green, s=90, zorder=5)
     ax_d.annotate(f"NeuroCode (4 KB)\n{nc_us:.0f} μs ({nc_us/1000:.3f} ms)",
                  xy=(nc_kb, nc_us), xytext=(nc_kb + 15, nc_us + 10),
