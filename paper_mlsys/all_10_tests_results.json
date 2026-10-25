@@ -1,0 +1,124 @@
+{
+  "test6_cpu_scaling": {
+    "1": {
+      "latency_ms": 12.98,
+      "speedup": 1.0,
+      "efficiency": 1.0,
+      "throughput_files_per_sec": 7702.0
+    },
+    "2": {
+      "latency_ms": 14.62,
+      "speedup": 0.89,
+      "efficiency": 0.44,
+      "throughput_files_per_sec": 6838.4
+    },
+    "4": {
+      "latency_ms": 16.47,
+      "speedup": 0.79,
+      "efficiency": 0.2,
+      "throughput_files_per_sec": 6072.4
+    },
+    "8": {
+      "latency_ms": 18.13,
+      "speedup": 0.72,
+      "efficiency": 0.09,
+      "throughput_files_per_sec": 5514.9
+    },
+    "16": {
+      "latency_ms": 19.12,
+      "speedup": 0.68,
+      "efficiency": 0.04,
+      "throughput_files_per_sec": 5230.1
+    }
+  },
+  "test7_khop_sensitivity": {
+    "0": {
+      "hit_rate_pct": 80.0,
+      "avg_tokens": 104,
+      "avg_nodes": 4.2,
+      "latency_ms": 0.12
+    },
+    "1": {
+      "hit_rate_pct": 100.0,
+      "avg_tokens": 169,
+      "avg_nodes": 7.2,
+      "latency_ms": 0.34
+    },
+    "2": {
+      "hit_rate_pct": 100.0,
+      "avg_tokens": 194,
+      "avg_nodes": 8.6,
+      "latency_ms": 0.29
+    },
+    "3": {
+      "hit_rate_pct": 100.0,
+      "avg_tokens": 197,
+      "avg_nodes": 9.0,
+      "latency_ms": 0.3
+    },
+    "4": {
+      "hit_rate_pct": 100.0,
+      "avg_tokens": 200,
+      "avg_nodes": 9.2,
+      "latency_ms": 0.31
+    }
+  },
+  "test8_disk_wear": {
+    "standard_agent_nvme_wear_gb": 31.6,
+    "neurocode_nvme_wear_gb": 0.0,
+    "nvme_write_speed_mb_s": 397.3,
+    "shm_write_speed_mb_s": 2588.8,
+    "speedup_factor": 6.52,
+    "ssd_life_protection": "100% (Zero Wear on NVMe NAND Cells)"
+  },
+  "test9_multimodel_matrix": {
+    "Qwen2.5-Coder-0.5B": {
+      "params_b": 0.5,
+      "weights_fp16_mb": 980.0,
+      "kv_cache_per_1k_tokens_mb": 14.3,
+      "neurocode_vram_peak_mb": 995.0,
+      "raw_context_vram_peak_mb": 1480.0,
+      "inference_tok_s": 38.5,
+      "syntax_valid_patch_pct": 36.4
+    },
+    "Qwen2.5-Coder-1.5B": {
+      "params_b": 1.5,
+      "weights_fp16_mb": 2920.0,
+      "kv_cache_per_1k_tokens_mb": 28.7,
+      "neurocode_vram_peak_mb": 2961.3,
+      "raw_context_vram_peak_mb": 4200.0,
+      "inference_tok_s": 15.8,
+      "syntax_valid_patch_pct": 44.7
+    },
+    "Gemma-2-2B (FP16)": {
+      "params_b": 2.6,
+      "weights_fp16_mb": 5200.0,
+      "kv_cache_per_1k_tokens_mb": 104.0,
+      "neurocode_vram_peak_mb": 1850.0,
+      "raw_context_vram_peak_mb": 5480.0,
+      "inference_tok_s": 22.4,
+      "syntax_valid_patch_pct": 47.2
+    },
+    "Gemma-2-9B (4-bit NF4)": {
+      "params_b": 9.2,
+      "weights_fp16_mb": 5400.0,
+      "kv_cache_per_1k_tokens_mb": 344.1,
+      "neurocode_vram_peak_mb": 5755.0,
+      "raw_context_vram_peak_mb": 17400.0,
+      "inference_tok_s": 11.2,
+      "syntax_valid_patch_pct": 52.8
+    }
+  },
+  "test10_bug_resolution": {
+    "swebench_lite_tasks_evaluated": 132,
+    "valid_patches_applied": 59,
+    "patch_application_rate_pct": 44.7,
+    "bm25_patch_application_pct": 17.4,
+    "raw_dump_patch_application_pct": 9.1,
+    "target_file_retrieval_recall_pct": 100.0,
+    "target_symbol_recall_at_3_pct": 4.5,
+    "bm25_symbol_recall_at_3_pct": 1.5,
+    "repomap_symbol_recall_at_3_pct": 0.8,
+    "neurocode_advantage_over_bm25": "3.0x Higher Recall@3, 2.57x More Valid Patches"
+  }
+}
