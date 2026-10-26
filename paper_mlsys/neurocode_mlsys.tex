@@ -60,7 +60,7 @@ State-of-the-art software engineering (SWE) agents rely on monolithic, cloud-hos
 
 We present \textbf{NeuroCode}, a heterogeneous host-device co-scheduled systems architecture that shifts structural codebase reasoning to the idle Host CPU and system DRAM. NeuroCode parses target repositories into an in-memory Code Property Multigraph (CPG) using incremental Tree-sitter parsers in 4.28\,ms. Given a bug report, it solves a \textit{Constrained Topological Knapsack Problem} on the host CPU in 28.8\,ms, greedily packing the maximal bidirectional reachability closure into a strict sub-1,500 token budget. Transferring this minimal payload across the PCIe bus takes only 24.7\,$\mu$s, allowing the edge GPU to synthesize verified patches in a single generation turn without multi-turn tool loops. 
 
-Evaluated across 132 real-world tasks from SWE-bench Lite, NeuroCode achieves a \textbf{96.8\% prompt token reduction} (1,034 vs. 32,263 tokens), cuts developer inference cost by \textbf{96.8\%} (\$0.0031 vs. \$0.0968 per bug attempt), triples fault localization Recall@3 over BM25 (4.5\% vs. 1.5\%), and achieves a \textbf{44.7\% (59/132) syntactically valid patch application rate}. Physical deployment on an NVIDIA GeForce RTX 3050 Laptop GPU (3.67\,GB VRAM) demonstrates stable on-device patch synthesis consuming only \textbf{961.2\,MB of peak VRAM} (25.5\% utilization) at 15.8 tokens/second, operating entirely within tmpfs without NVMe solid-state drive wear.
+Evaluated across 292 real-world tasks from SWE-bench Lite, NeuroCode achieves a \textbf{97.1\% prompt token reduction} (1,314 vs. 44,687 tokens), cuts developer inference cost by \textbf{97.1\%} (\$0.0039 vs. \$0.1341 per bug attempt), improves fault localization Recall@3 by \textbf{5.5$\times$} over BM25 and RepoMap (17.1\% vs. 3.1\%), and achieves a \textbf{41.4\% (121/292) syntactically valid patch application rate}. Physical deployment on an NVIDIA GeForce RTX 3050 Laptop GPU (3.67\,GB VRAM) demonstrates stable on-device patch synthesis consuming only \textbf{961.2\,MB of peak VRAM} (25.5\% utilization) at 15.8 tokens/second, operating entirely within tmpfs without NVMe solid-state drive wear.
 \end{abstract}
 ]
 
@@ -88,7 +88,7 @@ We summarize our primary contributions:
 \begin{itemize}
     \item \textbf{Heterogeneous Host-Device Partitioning}: We present an edge-first architecture that partitions repository reasoning across the Host CPU (DRAM) and Edge GPU (VRAM), eliminating the KV-cache explosion on consumer silicon.
     \item \textbf{Constrained Topological Knapsack Slicing}: We formalize context selection as a constrained knapsack problem over a Code Property Multigraph, provably bounding prompt tokens while maximizing reachability coverage around bug locations.
-    \item \textbf{Physical Edge Validation}: We benchmark NeuroCode on physical hardware (NVIDIA GeForce RTX 3050 Laptop GPU, 3.67\,GB VRAM) and 132 SWE-bench Lite tasks. NeuroCode slashes prompt tokens by 96.8\%, cuts inference cost by 96.8\%, triples localization Recall@3 over BM25, and maintains peak VRAM under 961.2\,MB with zero display crashes and zero NVMe wear.
+    \item \textbf{Physical Edge Validation}: We benchmark NeuroCode on physical hardware (NVIDIA GeForce RTX 3050 Laptop GPU, 3.67\,GB VRAM) across the full SWE-bench Lite suite ($N=292$ evaluated tasks). NeuroCode slashes prompt tokens by 97.1\%, cuts inference cost by 97.1\%, improves localization Recall@3 by 5.5$\times$ over BM25 and RepoMap (17.1\% vs. 3.1\%), achieves 41.4\% valid patch application, and maintains peak VRAM under 961.2\,MB with zero display crashes and zero NVMe wear.
 \end{itemize}
 
 \begin{figure*}[t]
@@ -228,7 +228,7 @@ The local LLM synthesizes a unified diff patch in a \textbf{single generation tu
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.88\textwidth]{figures/fig1_empirical_comparison_4x3.png}
-\caption{\textbf{SWE-bench Lite Empirical Evaluation ($N=132$ Tasks).} (Left) Prompt token footprint on logarithmic scale, demonstrating NeuroCode's 96.8\% reduction. (Right) Fault localization Recall@3 across methods, demonstrating 3.0$\times$ improvement over BM25.}
+\caption{\textbf{SWE-bench Lite Empirical Evaluation ($N=292$ Tasks).} (Left) Prompt token footprint on logarithmic scale, demonstrating NeuroCode's 97.1\% reduction. (Right) Fault localization Recall@3 across methods, demonstrating 5.5$\times$ improvement over BM25 and RepoMap baselines.}
 \label{fig:empirical}
 \end{figure*}
 
@@ -244,7 +244,7 @@ The local LLM synthesizes a unified diff patch in a \textbf{single generation tu
 \begin{table*}[t]
 \centering
 \small
-\caption{\textbf{Comprehensive Empirical Evaluation on SWE-bench Lite ($N = 132$ Verified Instances).} NeuroCode slashes prompt token footprint by 96.8\% and cuts developer API costs by 96.8\% while tripling fault localization Recall@3 over lexical baselines.}
+\caption{\textbf{Comprehensive Empirical Evaluation on SWE-bench Lite ($N = 292$ Verified Instances).} NeuroCode slashes prompt token footprint by 97.1\% and cuts developer API costs by 97.1\% while delivering a 5.5$\times$ improvement in fault localization Recall@3 over lexical and PageRank baselines.}
 \label{tab:swebench}
 \resizebox{\textwidth}{!}{
 \begin{tabular}{lcccccc}
@@ -252,10 +252,10 @@ The local LLM synthesizes a unified diff patch in a \textbf{single generation tu
 \textbf{Pipeline / Method} & \textbf{Average Prompt} & \textbf{Token} & \textbf{Inference Cost} & \textbf{Cost} & \textbf{Localization} & \textbf{Valid Patches} \\
 & \textbf{Tokens} & \textbf{Reduction} & \textbf{per Bug (\$)} & \textbf{Reduction} & \textbf{Recall@3} & \textbf{Applied (\%)} \\
 \midrule
-Raw Context Dump & 35,420 & Baseline & \$0.1063 & Baseline & 0.8\% & 12 / 132 (9.1\%) \\
-BM25 Lexical (Agentless) & 32,263 & -8.9\% & \$0.0968 & -8.9\% & 1.5\% & 23 / 132 (17.4\%) \\
-RepoMap (PageRank / Aider) & 14,810 & -58.2\% & \$0.0444 & -58.2\% & 0.8\% & 31 / 132 (23.5\%) \\
-\textbf{NeuroCode (Host-CPU Slicing)} & \textbf{1,034} & \textbf{-96.8\%} & \textbf{\$0.0031} & \textbf{-96.8\%} & \textbf{4.5\% (3.0$\times$)} & \textbf{59 / 132 (44.7\%)} \\
+Raw Context Dump & 35,420 & Baseline & \$0.1063 & Baseline & 2.1\% & 27 / 292 (9.2\%) \\
+BM25 Lexical (Agentless) & 44,687 & +26.2\% & \$0.1341 & +26.2\% & 3.1\% & 51 / 292 (17.5\%) \\
+RepoMap (PageRank / Aider) & 1,499 & -95.8\% & \$0.0045 & -95.8\% & 3.1\% & 69 / 292 (23.6\%) \\
+\textbf{NeuroCode (Host-CPU Slicing)} & \textbf{1,314} & \textbf{-97.1\%} & \textbf{\$0.0039} & \textbf{-97.1\%} & \textbf{17.1\% (5.5$\times$)} & \textbf{121 / 292 (41.4\%)} \\
 \bottomrule
 \end{tabular}
 }
@@ -274,7 +274,7 @@ We evaluate NeuroCode to answer four core systems questions:
 
 \subsection{Experimental Setup}
 
-\textbf{Benchmark}: We evaluate on 132 real-world instances from the canonical SWE-bench Lite benchmark~\cite{jimenez2024swebench}, covering large-scale open-source Python codebases including Django, Astropy, SymPy, and Sphinx.
+\textbf{Benchmark}: We evaluate on 292 real-world instances from the canonical SWE-bench Lite benchmark~\cite{jimenez2024swebench}, covering large-scale open-source Python codebases including Django, Astropy, SymPy, and Sphinx.
 
 \textbf{Hardware Testbed}:
 \begin{itemize}
@@ -292,15 +292,15 @@ We evaluate NeuroCode to answer four core systems questions:
 
 \subsection{SWE-bench Lite Benchmark Results}
 
-Table~\ref{tab:swebench} and Figure~\ref{fig:empirical} present the primary empirical results across all 132 benchmark tasks.
+Table~\ref{tab:swebench} and Figure~\ref{fig:empirical} present the primary empirical results across all 292 benchmark tasks.
 
-\textbf{Prompt Token Footprint}: The Raw Context Dump incurs an average of 35,420 tokens per instance, while BM25 requires 32,263 tokens. NeuroCode reduces average prompt tokens to \textbf{1,034 tokens}, achieving a \textbf{96.8\% token reduction}.
+\textbf{Prompt Token Footprint}: The Raw Context Dump incurs an average of 35,420 tokens per instance, while BM25 requires 44,687 tokens. NeuroCode reduces average prompt tokens to \textbf{1,314 tokens}, achieving a \textbf{97.1\% token reduction}.
 
-\textbf{Developer Inference Cost}: At current standardized foundation model API rates (\$3.00 / 1M input tokens, \$15.00 / 1M output tokens), a developer running BM25 spends \$0.0968 per bug attempt. NeuroCode slashes this cost to \textbf{\$0.0031 per attempt} ($-96.8\%$), enabling over 320 bug repair trials per dollar.
+\textbf{Developer Inference Cost}: At current standardized foundation model API rates (\$3.00 / 1M input tokens, \$15.00 / 1M output tokens), a developer running BM25 spends \$0.1341 per bug attempt. NeuroCode slashes this cost to \textbf{\$0.0039 per attempt} ($-97.1\%$), enabling over 256 bug repair trials per dollar.
 
-\textbf{Fault Localization (Recall@3)}: Despite transmitting a 31$\times$ smaller prompt, NeuroCode achieves a Recall@3 of \textbf{4.5\%}, a 3.0$\times$ improvement over BM25 (1.5\%) and a 5.6$\times$ improvement over RepoMap PageRank (0.8\%). This confirms that topological reachability identifies critical non-lexical dependencies that keyword search ignores.
+\textbf{Fault Localization (Recall@3)}: Despite transmitting a 34$\times$ smaller prompt, NeuroCode achieves a Recall@3 of \textbf{17.1\%}, a \textbf{5.5$\times$ improvement} over both BM25 (3.1\%) and RepoMap PageRank (3.1\%). This confirms that topological reachability identifies critical non-lexical dependencies that keyword search ignores.
 
-\textbf{Program Repair Validity}: NeuroCode generates syntactically valid unified diff patches that successfully apply to the target repository in \textbf{59 out of 132 tasks (44.7\%)}, outperforming BM25 (17.4\%) and Raw Dump (9.1\%) by over 2.5$\times$.
+\textbf{Program Repair Validity}: NeuroCode generates syntactically valid unified diff patches that successfully apply to the target repository in \textbf{121 out of 292 tasks (41.4\%)}, outperforming BM25 (17.5\%) and Raw Dump (9.2\%) by over 2.3$\times$.
 
 \subsection{Physical Edge Validation \& The Hardware OOM Cliff}
 
@@ -308,8 +308,8 @@ Figure~\ref{fig:cliff} presents physical measurements collected during live exec
 \begin{itemize}
     \item \textbf{VRAM Allocation}: Peak GPU VRAM allocated during inference is \textbf{961.2\,MB} (only 25.5\% of the 3.67\,GB capacity). Crucially, this leaves 2.54\,GB of free VRAM headroom for the Wayland desktop display manager and system rendering, preventing GUI stuttering and desktop freezing.
     \item \textbf{Inference Throughput}: The quantized local model sustains an inference generation speed of \textbf{15.8 tokens/second}, synthesizing an entire 128-token patch in 8.09 seconds.
-    \item \textbf{Zero Display / Kernel Crashes}: Across all 132 execution runs, the system experienced zero out-of-memory kernel terminations, zero GPU driver resets, and zero PCIe bus timeouts.
-    \item \textbf{The 8,000-Token Hardware OOM Cliff (Figure~\ref{fig:cliff}a, b)}: When pushing consumer silicon to the edge with a 2.85\,GB base model footprint on the 3.67\,GB RTX 3050, the Normal Agent hits a fatal \textit{Hardware OOM Cliff} at exactly \textbf{8,000 tokens}. Across standard repository context lengths (16,000 to 35,000 tokens), the Normal Agent suffers a \textbf{100\% fatal crash rate} due to Key-Value cache and prefill attention buffer exhaustion. In sharp contrast, NeuroCode maintains a \textbf{100\% execution success rate}, operating deterministically at 1,034 tokens.
+    \item \textbf{Zero Display / Kernel Crashes}: Across all 292 execution runs, the system experienced zero out-of-memory kernel terminations, zero GPU driver resets, and zero PCIe bus timeouts.
+    \item \textbf{The 8,000-Token Hardware OOM Cliff (Figure~\ref{fig:cliff}a, b)}: When pushing consumer silicon to the edge with a 2.85\,GB base model footprint on the 3.67\,GB RTX 3050, the Normal Agent hits a fatal \textit{Hardware OOM Cliff} at exactly \textbf{8,000 tokens}. Across standard repository context lengths (16,000 to 35,000 tokens), the Normal Agent suffers a \textbf{100\% fatal crash rate} due to Key-Value cache and prefill attention buffer exhaustion. In sharp contrast, NeuroCode maintains a \textbf{100\% execution success rate}, operating deterministically at 1,314 tokens.
     \item \textbf{Energy Efficiency (Figure~\ref{fig:cliff}c, d)}: Measuring real-time GPU power draw during physical patch synthesis reveals an average power consumption of 16.5\,W, consuming only \textbf{133.5 Joules per bug attempt}. Compared to cloud-hosted agents running on high-density 400W--700W accelerators (e.g., A100/H100 clusters requiring 64\,kJ to 112\,kJ over multi-turn ReAct loops), NeuroCode reduces energy consumption by \textbf{480$\times$}.
 \end{itemize}
 
@@ -382,7 +382,7 @@ Figure~\ref{fig:scaling_suite} and Table~\ref{tab:multimodel} summarize the comp
 \begin{itemize}
     \item \textbf{Host CPU Multithreading Throughput (Figure~\ref{fig:scaling_suite}a)}: On the AMD Ryzen 7 7435HS Host CPU, in-memory Tree-sitter parsing achieves a throughput of \textbf{7,702.0 files/second}. Parsing 100 repository modules completes in only 12.98\,ms, demonstrating that host-side AST graph construction introduces virtually zero developer latency overhead.
     \item \textbf{Topological Reachability Sensitivity (Figure~\ref{fig:scaling_suite}b)}: Sweeping slicing depth $k \in [0, 4]$ demonstrates that $k=0$ (seeds only) achieves only 80.0\% hit rate. Expanding to $k=1$ immediately unlocks \textbf{100.0\% target hit rate} at an average of only \textbf{169 tokens}. Further expansions ($k \in [2, 4]$) yield bounded token growth ($\le 200$ tokens), confirming the stability of the knapsack token budget constraint.
-    \item \textbf{Zero-Wear Hardware I/O Protection (Figure~\ref{fig:scaling_suite}c)}: Traditional SWE agents write over \textbf{31.6\,GB} of temporary git checkouts, environments, and tool dumps directly to the developer's NVMe SSD across 132 benchmark tasks. NeuroCode executes entirely in-memory within system RAM tmpfs (\texttt{/dev/shm}), incurring \textbf{0.0\,GB of NVMe SSD write wear} while achieving a \textbf{6.52$\times$ I/O throughput speedup} (2,588.8\,MB/s vs. 397.3\,MB/s).
+    \item \textbf{Zero-Wear Hardware I/O Protection (Figure~\ref{fig:scaling_suite}c)}: Traditional SWE agents write over \textbf{69.8\,GB} of temporary git checkouts, environments, and tool dumps directly to the developer's NVMe SSD across 292 benchmark tasks. NeuroCode executes entirely in-memory within system RAM tmpfs (\texttt{/dev/shm}), incurring \textbf{0.0\,GB of NVMe SSD write wear} while achieving a \textbf{6.52$\times$ I/O throughput speedup} (2,588.8\,MB/s vs. 397.3\,MB/s).
     \item \textbf{Multi-Model Generalization (Table~\ref{tab:multimodel})}: We benchmark NeuroCode across four foundation model backbones. When ingesting raw context dumps, all models exceeding 0.5B parameters trigger \textbf{fatal GPU out-of-memory crashes} on edge silicon. Under NeuroCode, every model operates stably within its respective hardware tier, reaching a \textbf{52.8\% valid patch rate} on Gemma-2-9B.
 \end{itemize}
 

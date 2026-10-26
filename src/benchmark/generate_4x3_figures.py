@@ -16,25 +16,25 @@ FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def generate_fig1_4x3(out_path: Path):
-    """Figure 1 in 4:3 aspect ratio (8 x 6 inches): Token Cost & Recall@3 (N=132)."""
+    """Figure 1 in 4:3 aspect ratio (8 x 6 inches): Token Cost & Recall@3 (N=292)."""
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6), dpi=300)
 
     # Panel (a): Context Tokens & Dollar Cost
     methods = ['Raw Dump\n(Baseline)', 'BM25\n(Agentless)', 'RepoMap\n(Aider)', 'NeuroCode\n(Ours)']
-    tokens = [24500, 32263, 1500, 1034]
+    tokens = [35420, 44687, 1499, 1314]
     costs = [(t / 1e6) * 3.0 for t in tokens]
     colors = ['#e74c3c', '#f39c12', '#3498db', '#2ecc71']
 
     bars1 = ax1.bar(methods, tokens, color=colors, edgecolor='black', width=0.52)
     ax1.set_ylabel('Input Prompt Tokens', fontsize=9.5, fontweight='bold')
-    ax1.set_title('(a) Context Token Footprint & Dollar Cost per Bug Attempt (N = 132 SWE-bench Lite)', fontsize=10.5, fontweight='bold')
+    ax1.set_title('(a) Context Token Footprint & Dollar Cost per Bug Attempt (N = 292 SWE-bench Lite)', fontsize=10.5, fontweight='bold')
     ax1.grid(axis='y', linestyle='--', alpha=0.5)
-    ax1.set_ylim(0, 39000)
+    ax1.set_ylim(0, 52000)
 
     for bar, tok, cost in zip(bars1, tokens, costs):
         ax1.text(
             bar.get_x() + bar.get_width() / 2,
-            tok + 1000,
+            tok + 1200,
             f"{tok:,} tok\n(${cost:.4f})",
             ha='center',
             fontsize=8.5,
@@ -42,9 +42,9 @@ def generate_fig1_4x3(out_path: Path):
         )
 
     ax1.annotate(
-        '-96.8% Cost Savings',
-        xy=(3, 1034),
-        xytext=(2.2, 17000),
+        '-97.1% Cost Savings',
+        xy=(3, 1314),
+        xytext=(2.2, 22000),
         arrowprops=dict(facecolor='#27ae60', shrink=0.08, width=1.8, headwidth=7),
         fontsize=9,
         fontweight='bold',
@@ -55,18 +55,18 @@ def generate_fig1_4x3(out_path: Path):
 
     # Panel (b): Fault Localization Recall@3
     labels = ['BM25 (Agentless)', 'RepoMap (Aider PageRank)', 'NeuroCode CPG (Our Method)']
-    recalls = [1.5, 0.8, 4.5]
+    recalls = [3.1, 3.1, 17.1]
     bar_colors2 = ['#f39c12', '#3498db', '#27ae60']
 
     bars2 = ax2.barh(labels, recalls, color=bar_colors2, edgecolor='black', height=0.45)
     ax2.set_xlabel('Fault Localization Recall@3 (%)', fontsize=9.5, fontweight='bold')
-    ax2.set_title('(b) Target Fault Localization Accuracy on SWE-bench Lite (N = 132)', fontsize=10.5, fontweight='bold')
+    ax2.set_title('(b) Target Fault Localization Accuracy on SWE-bench Lite (N = 292)', fontsize=10.5, fontweight='bold')
     ax2.grid(axis='x', linestyle='--', alpha=0.5)
-    ax2.set_xlim(0, 6.0)
+    ax2.set_xlim(0, 22.0)
 
     for bar, rec in zip(bars2, recalls):
         ax2.text(
-            rec + 0.15,
+            rec + 0.35,
             bar.get_y() + bar.get_height() / 2,
             f"{rec:.1f}%",
             va='center',
@@ -75,9 +75,9 @@ def generate_fig1_4x3(out_path: Path):
         )
 
     ax2.annotate(
-        '3.0x vs BM25 | 5.6x vs RepoMap',
-        xy=(4.5, 2),
-        xytext=(3.4, 1.2),
+        '5.5x vs BM25 & RepoMap',
+        xy=(17.1, 2),
+        xytext=(12.0, 1.2),
         arrowprops=dict(facecolor='#27ae60', shrink=0.08, width=1.5, headwidth=6),
         fontsize=8.5,
         fontweight='bold',
