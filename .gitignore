@@ -18,5 +18,8 @@ Thumbs.db
 paper/neurocode_overleaf_package/
 kaggle_debug_log/
 
+*.egg-info/
+build/
+dist/
 data/
 kaggle_multibench_output/

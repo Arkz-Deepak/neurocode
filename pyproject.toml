@@ -20,4 +20,10 @@ dependencies = [
 ]
 
 [project.scripts]
-neurocode = "code_assistant:main"
+neurocode = "src.cli:main"
+neurocode-mcp = "src.mcp_server:main"
+neurocode-copilot = "code_assistant:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]

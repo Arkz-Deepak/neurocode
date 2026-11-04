@@ -113,63 +113,104 @@ def cmd_repair(args):
     token_count = int(len(slice_text.split()) * 1.3)
     print(f"  -> Context sliced in {prep_ms:.1f} ms: {len(subgraph.nodes)} nodes (~{token_count} tokens).")
 
-    # 2. Model Loading (4-bit NF4 Quantization)
-    print(f"\n[2/4] Loading local LLM: {args.model} on GPU...")
-    from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+    # 2. Model Inference (Ollama or Transformers)
+    response_text = ""
+    provider = getattr(args, "provider", "transformers")
 
-    bnb_config = None
-    if args.four_bit and torch.cuda.is_available():
-        bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_compute_dtype=torch.float16
+    if provider == "ollama":
+        import json
+        import urllib.request
+        ollama_url = getattr(args, "ollama_url", "http://localhost:11434").rstrip("/")
+        print(f"\n[2/4] Querying local Ollama daemon ({args.model}) at {ollama_url}...")
+        prompt = (
+            f"{slice_text}\n\n"
+            f"Issue Description:\n{args.issue}\n\n"
+            f"Provide the exact fix using SEARCH/REPLACE format:\n"
+            f"FILE: <file_path>\n<<<<<<< SEARCH\n<exact lines to replace>\n=======\n<replacement lines>\n>>>>>>>\n"
         )
+        payload = {
+            "model": args.model,
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt}
+            ],
+            "stream": False,
+            "options": {"temperature": 0.1, "num_predict": 350}
+        }
+        try:
+            req = urllib.request.Request(
+                f"{ollama_url}/api/chat",
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"}
+            )
+            t_gen0 = time.perf_counter()
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                gen_time = time.perf_counter() - t_gen0
+                response_text = data.get("message", {}).get("content", "")
+            print(f"  -> Ollama responded in {gen_time:.2f}s.")
+        except Exception as e:
+            print(f"  -> [OLLAMA ERROR] Could not connect to Ollama at {ollama_url}: {e}")
+            print("     Make sure Ollama is running (`ollama serve`).")
+            return
+    else:
+        print(f"\n[2/4] Loading local LLM: {args.model} on GPU...")
+        from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 
-    t_load = time.perf_counter()
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
-    model = AutoModelForCausalLM.from_pretrained(
-        args.model,
-        quantization_config=bnb_config,
-        torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
-        device_map="auto" if torch.cuda.is_available() else "cpu"
-    )
-    load_time = time.perf_counter() - t_load
-    vram_mb = torch.cuda.memory_allocated() / (1024**2) if torch.cuda.is_available() else 0.0
-    print(f"  -> Model ready in {load_time:.2f}s | Active VRAM: {vram_mb:.1f} MB.")
+        bnb_config = None
+        if args.four_bit and torch.cuda.is_available():
+            bnb_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_compute_dtype=torch.float16
+            )
 
-    # 3. Patch Inference
-    print("\n[3/4] Synthesizing precise code patch...")
-    prompt = (
-        f"{slice_text}\n\n"
-        f"Issue Description:\n{args.issue}\n\n"
-        f"Provide the exact fix using SEARCH/REPLACE format:\n"
-        f"FILE: <file_path>\n<<<<<<< SEARCH\n<exact lines to replace>\n=======\n<replacement lines>\n>>>>>>>\n"
-    )
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": prompt}
-    ]
-    chat_prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-    inputs = tokenizer(chat_prompt, return_tensors="pt").to(model.device)
-
-    if torch.cuda.is_available():
-        torch.cuda.reset_peak_memory_stats()
-
-    t_gen0 = time.perf_counter()
-    with torch.no_grad():
-        outputs = model.generate(
-            **inputs,
-            max_new_tokens=300,
-            temperature=0.1,
-            do_sample=False,
-            pad_token_id=tokenizer.eos_token_id
+        t_load = time.perf_counter()
+        tokenizer = AutoTokenizer.from_pretrained(args.model)
+        model = AutoModelForCausalLM.from_pretrained(
+            args.model,
+            quantization_config=bnb_config,
+            torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
+            device_map="auto" if torch.cuda.is_available() else "cpu"
         )
-    gen_time = time.perf_counter() - t_gen0
-    new_tokens = outputs.shape[1] - inputs.input_ids.shape[1]
-    response_text = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
-    peak_vram = torch.cuda.max_memory_allocated() / (1024**2) if torch.cuda.is_available() else 0.0
+        load_time = time.perf_counter() - t_load
+        vram_mb = torch.cuda.memory_allocated() / (1024**2) if torch.cuda.is_available() else 0.0
+        print(f"  -> Model ready in {load_time:.2f}s | Active VRAM: {vram_mb:.1f} MB.")
 
-    print(f"  -> Generated {new_tokens} tokens in {gen_time:.2f}s ({new_tokens/gen_time:.1f} tok/s) | Peak VRAM: {peak_vram:.1f} MB.")
+        # 3. Patch Inference
+        print("\n[3/4] Synthesizing precise code patch...")
+        prompt = (
+            f"{slice_text}\n\n"
+            f"Issue Description:\n{args.issue}\n\n"
+            f"Provide the exact fix using SEARCH/REPLACE format:\n"
+            f"FILE: <file_path>\n<<<<<<< SEARCH\n<exact lines to replace>\n=======\n<replacement lines>\n>>>>>>>\n"
+        )
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt}
+        ]
+        chat_prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        inputs = tokenizer(chat_prompt, return_tensors="pt").to(model.device)
+
+        if torch.cuda.is_available():
+            torch.cuda.reset_peak_memory_stats()
+
+        t_gen0 = time.perf_counter()
+        with torch.no_grad():
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=300,
+                temperature=0.1,
+                do_sample=False,
+                pad_token_id=tokenizer.eos_token_id
+            )
+        gen_time = time.perf_counter() - t_gen0
+        new_tokens = outputs.shape[1] - inputs.input_ids.shape[1]
+        response_text = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+        peak_vram = torch.cuda.max_memory_allocated() / (1024**2) if torch.cuda.is_available() else 0.0
+
+        print(f"  -> Generated {new_tokens} tokens in {gen_time:.2f}s ({new_tokens/gen_time:.1f} tok/s) | Peak VRAM: {peak_vram:.1f} MB.")
+
     print("\n---------------- GENERATED PATCH OUTPUT ----------------")
     print(response_text)
     print("--------------------------------------------------------\n")
@@ -223,13 +264,18 @@ def main():
     slice_parser.add_argument("--budget", type=int, default=1500, help="Maximum token budget for prompt")
     slice_parser.add_argument("--output", type=str, default=None, help="Save sliced Markdown prompt to file")
 
+    # Command: mcp
+    subparsers.add_parser("mcp", help="Start the Model Context Protocol (MCP) stdio server for Claude Desktop / Cursor / Continue")
+
     # Command: repair
     repair_parser = subparsers.add_parser("repair", help="Perform end-to-end bug localization and patch synthesis")
     repair_parser.add_argument("--repo", type=str, default=".", help="Path to repository directory")
     repair_parser.add_argument("--issue", type=str, required=True, help="Bug report description or traceback")
     repair_parser.add_argument("--budget", type=int, default=1500, help="Maximum token budget")
-    repair_parser.add_argument("--model", type=str, default="Qwen/Qwen2.5-Coder-1.5B-Instruct", help="HuggingFace model ID")
-    repair_parser.add_argument("--four-bit", action="store_true", default=True, help="Use 4-bit NF4 quantization")
+    repair_parser.add_argument("--provider", type=str, default="transformers", choices=["transformers", "ollama"], help="Inference provider (transformers or ollama)")
+    repair_parser.add_argument("--ollama-url", type=str, default="http://localhost:11434", help="Ollama server URL")
+    repair_parser.add_argument("--model", type=str, default="Qwen/Qwen2.5-Coder-1.5B-Instruct", help="Model ID or Ollama model tag")
+    repair_parser.add_argument("--four-bit", action="store_true", default=True, help="Use 4-bit NF4 quantization (transformers only)")
     repair_parser.add_argument("--apply", action="store_true", help="Apply patch directly to source code")
     repair_parser.add_argument("--test", type=str, default=None, help="Test command to run after applying patch (e.g. 'pytest tests/test_gw.py')")
 
@@ -237,6 +283,9 @@ def main():
 
     if args.command == "info":
         get_hardware_info()
+    elif args.command == "mcp":
+        from src.mcp_server import main as run_mcp
+        run_mcp()
     elif args.command == "slice":
         cmd_slice(args)
     elif args.command == "repair":
