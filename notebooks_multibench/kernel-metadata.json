@@ -1,0 +1,16 @@
+{
+  "id": "deepark121/neurocode-multi-benchmark-suite",
+  "title": "neurocode-multi-benchmark-suite",
+  "code_file": "neurocode_multibenchmark_suite.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": false,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [
+    "gemma-4-developer-agent-paper"
+  ],
+  "kernel_sources": []
+}
