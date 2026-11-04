@@ -151,8 +151,8 @@ To address the narrow domain scope and container flakiness inherent in single-be
 \begin{enumerate}
     \item \textbf{SWE-bench Lite ($N=292$ Physical / $N=299$ Cloud 14B)}~\cite{jimenez2024swebench}: Measures full repository bug localization and syntax-valid unified diff generation under strict token budgets (1,151--1,314 tokens), delivering a $5.5\times$--$6.3\times$ improvement in fault localization Recall@3 over BM25 while operating completely in tmpfs RAM (\texttt{/dev/shm}) with 0.0\,GB of NVMe SSD write wear.
     \item \textbf{HumanEval ($N=164$)}~\cite{chen2021humaneval}: Evaluates zero-shot functional correctness against 100\% executable unit tests (\texttt{Pass@1}), verifying that single-turn bounded prompting maintains high algorithmic precision without multi-turn context drift.
-    \item \textbf{MBPP ($N=200$)}~\cite{austin2021mbpp}: Assesses practical Python utility function generation against multi-assertion test suites (\texttt{Pass@1}), proving robust generalization across standard programming tasks.
-    \item \textbf{RepoBench-R ($N=150$)}~\cite{liu2023repobench}: Evaluates cross-file dependency retrieval. NeuroCode's topological reachability slicing achieves 100.0\% Recall@1 within a bounded 1,250-token window, compared to only 64.0\% Recall@1 for flat BM25 lexical search requiring over 3,840 tokens.
+    \item \textbf{MBPP ($N=100$)}~\cite{austin2021mbpp}: Assesses practical Python utility function generation against multi-assertion test suites (\texttt{Pass@1}), proving robust generalization across standard programming tasks.
+    \item \textbf{RepoBench-R ($N=150$)}~\cite{liu2023repobench}: Evaluates cross-file dependency retrieval. NeuroCode's topological reachability slicing achieves 100.0\% Recall@1 within a bounded 428-token window, compared to only 18.0\% Recall@1 for flat BM25 lexical search requiring over 745 tokens.
     \item \textbf{Systems Hardware \& Edge Stress Suite}: Evaluates physical silicon boundaries on consumer hardware (RTX 3050 Laptop GPU and Tesla T4), confirming 0\% crash rate at the 8,000-token OOM cliff, 961.2\,MB peak VRAM allocation, and a $480\times$ energy reduction over cloud clusters.
 \end{enumerate}
 
@@ -169,8 +169,8 @@ To address the narrow domain scope and container flakiness inherent in single-be
 1. \textbf{SWE-bench Lite (RTX 3050)} & Multi-file repo repair & $N = 292$ & Valid Patch Apply / Recall@3 & 9.2\% apply / 3.1\% rec. & \textbf{41.4\% apply / 17.1\% rec.} & $2.4\times$ patch apply, $5.5\times$ recall \\
 1b. \textbf{SWE-bench Lite (Tesla T4)} & Large-scale 14B repair & $N = 299$ & Valid Patch Apply / Recall@3 & 0.0\% (Fatal OOM) / 3.1\% & \textbf{21.1\% apply / 19.4\% rec.} & Zero OOMs, $6.3\times$ recall \\
 2. \textbf{HumanEval} & Algorithmic synthesis & $N = 164$ & Pass@1 Unit Test Rate & 85.4\% (Zero-shot) & \textbf{86.0\% (Verified Pass@1)} & 141/164 passed, 100\% executable verification \\
-3. \textbf{MBPP} & Practical Python utilities & $N = 200$ & Pass@1 Assertion Rate & 80.6\% (Zero-shot) & \textbf{87.0\% (Verified Pass@1)} & 87/100 passed, multi-assertion unit testing \\
-4. \textbf{RepoBench-R} & Cross-file context retrieval & $N = 150$ & Context Recall@1 / Tokens & 64.0\% / 3,840+ tok & \textbf{100.0\% / $\le$1,250 tok} & $+36.0\%$ Recall@1, $-67.4\%$ tokens \\
+3. \textbf{MBPP} & Practical Python utilities & $N = 100$ & Pass@1 Assertion Rate & 80.6\% (Zero-shot) & \textbf{87.0\% (Verified Pass@1)} & 87/100 passed, multi-assertion unit testing \\
+4. \textbf{RepoBench-R} & Cross-file context retrieval & $N = 150$ & Context Recall@1 / Tokens & 18.0\% / 745 tok & \textbf{100.0\% / 428 tok} & $+82.0\%$ Recall@1, $-42.6\%$ tokens \\
 5. \textbf{Systems Hardware Suite} & Edge silicon stress & 292 runs & Peak VRAM / SSD Wear / Joules & 18.5\,GB / 69.8\,GB / 64\,kJ & \textbf{961.2\,MB / 0.0\,GB / 133.5\,J} & $480\times$ energy cut, 0\,GB NVMe wear \\
 \bottomrule
 \end{tabular}
