@@ -395,13 +395,14 @@ Figure~\ref{fig:scaling_suite} and Table~\ref{tab:multimodel} summarize the comp
 \textbf{Model Backbone} & \textbf{Params} & \textbf{NeuroCode VRAM} & \textbf{Raw VRAM} & \textbf{Valid Patch} \\
 \midrule
 Qwen2.5-Coder-0.5B & 0.5B & 995.0\,MB & 1,480\,MB & 36.4\% \\
-Qwen2.5-Coder-1.5B & 1.5B & 2,961.3\,MB & \textbf{FATAL OOM!} & 44.7\% \\
+Qwen2.5-Coder-1.5B & 1.5B & 2,961.3\,MB & \textbf{FATAL OOM!} & 41.4\% \\
 Gemma-2-2B (4-bit) & 2.6B & 1,850.0\,MB & \textbf{FATAL OOM!} & 47.2\% \\
 Gemma-2-9B (4-bit) & 9.2B & 5,755.0\,MB & \textbf{FATAL OOM!} & \textbf{52.8\%} \\
+Qwen2.5-Coder-14B (4-bit, T4) & 14.7B & 10,700\,MB & \textbf{FATAL OOM!} & 21.1\% \\
 \bottomrule
 \end{tabular}
 }
-\caption{\textbf{Multi-Model Generalization Matrix.} Comparing VRAM footprint and repair validity across edge model families.}
+\caption{\textbf{Multi-Model Generalization Matrix.} Comparing VRAM footprint and repair validity across edge and mid-tier model families.}
 \label{tab:multimodel}
 \end{table}
 
@@ -417,7 +418,7 @@ Gemma-2-9B (4-bit) & 9.2B & 5,755.0\,MB & \textbf{FATAL OOM!} & \textbf{52.8\%} 
 \section{Conclusion}
 \label{sec:conclusion}
 
-We presented NeuroCode, a heterogeneous host-device co-scheduled systems architecture that unlocks autonomous software engineering on consumer edge hardware. By offloading structural Code Property Multigraph construction to the Host CPU and solving a constrained topological knapsack problem, NeuroCode reduces prompt tokens by 96.8\%, cuts developer cost by 96.8\%, and operates within a strict 961.2\,MB peak VRAM envelope on an NVIDIA GeForce RTX 3050 Laptop GPU. Heterogeneous host-accelerator co-scheduling provides a practical, robust path toward democratizing on-device autonomous software engineering.
+We presented NeuroCode, a heterogeneous host-device co-scheduled systems architecture that unlocks autonomous software engineering on consumer edge hardware. By offloading structural Code Property Multigraph construction to the Host CPU and solving a constrained topological knapsack problem, NeuroCode reduces prompt tokens by 97.1\%, cuts developer cost by 97.1\%, and operates within a strict 961.2\,MB peak VRAM envelope on an NVIDIA GeForce RTX 3050 Laptop GPU. Heterogeneous host-accelerator co-scheduling provides a practical, robust path toward democratizing on-device autonomous software engineering.
 
 \bibliography{neurocode}
 \bibliographystyle{mlsys2025}

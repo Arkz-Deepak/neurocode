@@ -52,10 +52,14 @@ cells.append({
 cell1_code = """# 1. Environment Setup & Hardware Detection
 !pip install -q tree-sitter==0.26.0 tree-sitter-python==0.25.0 networkx datasets transformers accelerate pytest matplotlib pandas bitsandbytes
 
-import os, sys, time, tempfile, subprocess, re, json, shutil
+import os, sys, time, tempfile, subprocess, re, json, shutil, gc
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional, Set, Tuple, Any
+
+# Prevent CUDA memory fragmentation for 14B model on Tesla T4 (16GB)
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -287,8 +291,14 @@ cells.append({
 # ==============================================================================
 # CELL 6: Resumable NeuroCode SWE-bench Benchmark Loop (One Task at a Time)
 # ==============================================================================
+preloaded_results_str = "[]"
+if Path('kaggle_output/swebench_neurocode_results.json').exists():
+    with open('kaggle_output/swebench_neurocode_results.json', 'r') as f:
+        preloaded_results_str = f.read().strip()
+
 cell6_code = """# 6. Full Resumable NeuroCode SWE-bench Lite Benchmark (Ephemeral One-by-One Execution)
 from datasets import load_dataset
+import gc
 
 print('='*75)
 print('      NEUROCODE AUTONOMOUS SWE-BENCH LITE EVALUATION (14B MODEL)')
@@ -315,8 +325,20 @@ if results_file.exists():
     except Exception:
         completed_results = []
 
+if not completed_results:
+    try:
+        prior_data = json.loads('''__PRELOADED_RESULTS__''')
+        if prior_data:
+            completed_results = prior_data
+            with open(results_file, 'w', encoding='utf-8') as f:
+                json.dump(completed_results, f, indent=2)
+            pd.DataFrame(completed_results).to_csv(summary_csv, index=False)
+            print(f'Successfully pre-loaded {len(completed_results)} tasks from prior run.')
+    except Exception as e:
+        pass
+
 completed_ids = {r['instance_id'] for r in completed_results}
-print(f'Already completed: {len(completed_ids)} / {total_instances} instances.')
+print(f'Active Progress: {len(completed_ids)} / {total_instances} instances completed.')
 
 ram_dir = '/dev/shm' if os.path.exists('/dev/shm') and os.access('/dev/shm', os.W_OK) else tempfile.gettempdir()
 max_tokens_budget = 1500
@@ -361,9 +383,9 @@ for i, item in enumerate(ds):
         # 2. Constrained Topological Knapsack Slicing
         t0_slice = time.perf_counter()
         slicer = CodeGraphSlicer(graph, max_tokens=max_tokens_budget)
-        seeds = slicer.find_seed_nodes(prob)
+        seeds = slicer.find_seeds(prob) if hasattr(slicer, 'find_seeds') else slicer.find_seed_nodes(prob)
         subgraph = slicer.extract_subgraph(seeds, k_hops=1)
-        slice_text = slicer.format_slice_for_llm(subgraph, seeds, query=prob, max_tokens=max_tokens_budget)
+        slice_text = slicer.format_slice(subgraph, seeds, query=prob, max_tokens=max_tokens_budget) if hasattr(slicer, 'format_slice') else slicer.format_slice_for_llm(subgraph, seeds, query=prob, max_tokens=max_tokens_budget)
         slice_ms = (time.perf_counter() - t0_slice) * 1000
 
         token_count = int(len(slice_text.split()) * 1.3)
@@ -385,15 +407,28 @@ for i, item in enumerate(ds):
         inputs = tokenizer(chat_prompt, return_tensors='pt').to(model.device)
 
         t0_gen = time.perf_counter()
-        with torch.no_grad():
-            outputs = model.generate(
-                **inputs,
-                max_new_tokens=250,
-                do_sample=False,
-                pad_token_id=tokenizer.eos_token_id
-            )
-        gen_ms = (time.perf_counter() - t0_gen) * 1000
-        resp_text = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+        resp_text = ""
+        gen_ms = 0.0
+        try:
+            with torch.no_grad():
+                outputs = model.generate(
+                    **inputs,
+                    max_new_tokens=250,
+                    do_sample=False,
+                    pad_token_id=tokenizer.eos_token_id
+                )
+            gen_ms = (time.perf_counter() - t0_gen) * 1000
+            resp_text = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+        except torch.cuda.OutOfMemoryError:
+            print(f"  -> [{iid}] CUDA OOM safely intercepted; reclaiming cache.")
+            torch.cuda.empty_cache()
+            gc.collect()
+        finally:
+            del inputs
+            if 'outputs' in locals():
+                del outputs
+            torch.cuda.empty_cache()
+            gc.collect()
 
         # 4. Patch Application & Test Verification
         patch_res = PatchApplier.extract_patch(resp_text, graph=graph, repo_dir=str(workspace_path))
@@ -438,6 +473,10 @@ for i, item in enumerate(ds):
             json.dump(completed_results, f, indent=2)
         pd.DataFrame(completed_results).to_csv(summary_csv, index=False)
 
+        # Reclaim VRAM after every task
+        torch.cuda.empty_cache()
+        gc.collect()
+
         stat_str = "APPLIED [OK]" if patch_applied else "NO PATCH"
         test_str = "PASS [OK]" if test_passed else "FAIL"
         fhit_str = "HIT" if file_hit else "MISS"
@@ -447,6 +486,7 @@ print('\\n' + '='*75)
 print(f'EVALUATION COMPLETE: {len(completed_results)} / {total_instances} Tasks Processed in {(time.perf_counter() - t0_suite)/60:.1f} minutes.')
 print('='*75)
 """
+cell6_code = cell6_code.replace("__PRELOADED_RESULTS__", preloaded_results_str)
 cells.append({
     "cell_type": "code",
     "execution_count": None,
