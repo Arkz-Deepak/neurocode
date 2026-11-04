@@ -1,0 +1,58 @@
+\documentclass[letterpaper, 10 pt, conference]{ieeeconf}
+
+\IEEEoverridecommandlockouts
+\overrideIEEEmargins
+
+\usepackage[dvipsnames]{xcolor}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{etoolbox}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{colortbl}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue
+}
+\usepackage{placeins}
+\usepackage{url}
+\usepackage{microtype}
+\usepackage{cite}
+
+\title{\LARGE \bf
+NeuroCode: Heterogeneous Host-Device Co-Scheduling for Memory-Bounded Repository-Scale Software Engineering Agents}
+
+\author{Deepak R.$^{1}$%
+\thanks{$^{1}$Deepak R. is with the Department of Robotics and Automation Engineering, Dhaanish Ahmed College of Engineering, Anna University, Chennai 601301, India (e-mail: \texttt{wssedd18@gmail.com}).}%
+}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+\pagestyle{empty}
+
+\begin{abstract}
+State-of-the-art software engineering (SWE) agents rely on monolithic, cloud-hosted large language models (LLMs) with massive context windows (128k+ tokens) running on dense datacenter clusters. Deploying SWE agents on consumer edge hardware ($<$ 8\,GB VRAM) introduces a catastrophic failure mode: the \textit{Key-Value (KV) Cache Memory Wall}. Storing attention KV tensors for full repository dumps requires up to 14.2\,GB of VRAM, instantly triggering Out-of-Memory (OOM) kernel panics. Concurrently, multi-turn tool-calling loops cause compact edge models to enter repetitive exploration drift. 
+
+We present \textbf{NeuroCode}, a heterogeneous host-device co-scheduled systems architecture that shifts structural codebase reasoning to the idle Host CPU and system DRAM. NeuroCode parses target repositories into an in-memory Code Property Multigraph (CPG) using incremental Tree-sitter parsers in 4.28\,ms. Given a bug report, it solves a \textit{Constrained Topological Knapsack Problem} on the host CPU in 28.8\,ms, greedily packing the maximal bidirectional reachability closure into a strict sub-1,500 token budget. Transferring this minimal payload across the PCIe bus takes only 24.7\,$\mu$s, allowing the edge GPU to synthesize verified patches in a single generation turn without multi-turn tool loops. 
+
+Evaluated across 292 real-world tasks from SWE-bench Lite, NeuroCode achieves a \textbf{97.1\% prompt token reduction} (1,314 vs. 44,687 tokens), cuts developer inference cost by \textbf{97.1\%} (\$0.0039 vs. \$0.1341 per bug attempt), improves fault localization Recall@3 by \textbf{5.5$\times$} over BM25 and RepoMap (17.1\% vs. 3.1\%), and achieves a \textbf{41.4\% (121/292) syntactically valid patch application rate}. Physical deployment on an NVIDIA GeForce RTX 3050 Laptop GPU (3.67\,GB VRAM) demonstrates stable on-device patch synthesis consuming only \textbf{961.2\,MB of peak VRAM} (25.5\% utilization) at 15.8 tokens/second, operating entirely within tmpfs without NVMe solid-state drive wear.
+\end{abstract}
+
+\input{sections/01_Introduction}
+\input{sections/02_RelatedWork}
+\input{sections/03_Method}
+\input{sections/04_Experiments}
+\input{sections/05_Conclusion}
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

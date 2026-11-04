@@ -1,0 +1,8 @@
+\section{Related Work}
+\label{sec:related}
+
+\textbf{Autonomous SWE Agents}: SWE-agent~\cite{yang2024sweagent} pioneered agent-computer interfaces for command-line tool execution. Agentless~\cite{xia2024agentless} introduced a two-phase deterministic pipeline using BM25 lexical search. While Agentless eliminated loop drift, its reliance on BM25 renders it lexically blind to non-lexical dependencies. NeuroCode combines loop-free single-turn generation with topological AST reachability.
+
+\textbf{Graph-Based Code Analysis}: RepoGraph~\cite{repograph2025} employs an external Neo4j graph database queried interactively by LLM agents. Code Graph Models~\cite{codegraph2025} train custom graph adapter weights for 72B parameter models. NeuroCode requires zero external database daemons and zero model fine-tuning, operating plug-and-play on off-the-shelf edge models.
+
+\textbf{Efficient LLM Inference}: Systems such as vLLM~\cite{kwon2023vllm} optimize KV-cache memory using PagedAttention, while H$_2$O~\cite{zhang2023h2o} and StreamingLLM~\cite{xiao2024streamingllm} prune KV cache tokens during generation. NeuroCode operates upstream of the GPU: by slicing the context prior to PCIe transmission, it avoids KV cache allocation entirely.
