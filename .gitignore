@@ -17,3 +17,6 @@ kaggle_output/
 Thumbs.db
 paper/neurocode_overleaf_package/
 kaggle_debug_log/
+
+data/
+kaggle_multibench_output/
