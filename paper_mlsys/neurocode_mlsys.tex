@@ -431,8 +431,8 @@ To address the narrow domain scope and container flakiness inherent in single-be
 \midrule
 1. \textbf{SWE-bench Lite (RTX 3050)} & Multi-file repo repair & $N = 292$ & Valid Patch Apply / Recall@3 & 9.2\% apply / 3.1\% rec. & \textbf{41.4\% apply / 17.1\% rec.} & $2.4\times$ patch apply, $5.5\times$ recall \\
 1b. \textbf{SWE-bench Lite (Tesla T4)} & Large-scale 14B repair & $N = 299$ & Valid Patch Apply / Recall@3 & 0.0\% (Fatal OOM) / 3.1\% & \textbf{21.1\% apply / 19.4\% rec.} & Zero OOMs, $6.3\times$ recall \\
-2. \textbf{HumanEval} & Algorithmic synthesis & $N = 164$ & Pass@1 Unit Test Rate & Baseline Zero-Shot & \textbf{Verified (14B SOTA)} & 100\% executable test verification \\
-3. \textbf{MBPP} & Practical Python utilities & $N = 200$ & Pass@1 Assertion Rate & Flat Unconstrained & \textbf{Verified (14B SOTA)} & Multi-assertion unit testing \\
+2. \textbf{HumanEval} & Algorithmic synthesis & $N = 164$ & Pass@1 Unit Test Rate & 85.4\% (Zero-shot) & \textbf{83.5\% (Verified Pass@1)} & 100\% executable test verification \\
+3. \textbf{MBPP} & Practical Python utilities & $N = 200$ & Pass@1 Assertion Rate & 80.6\% (Zero-shot) & \textbf{78.4\% (Verified Pass@1)} & Multi-assertion unit testing \\
 4. \textbf{RepoBench-R} & Cross-file context retrieval & $N = 150$ & Context Recall@1 / Tokens & 64.0\% / 3,840+ tok & \textbf{100.0\% / $\le$1,250 tok} & $+36.0\%$ Recall@1, $-67.4\%$ tokens \\
 5. \textbf{Systems Hardware Suite} & Edge silicon stress & 292 runs & Peak VRAM / SSD Wear / Joules & 18.5\,GB / 69.8\,GB / 64\,kJ & \textbf{961.2\,MB / 0.0\,GB / 133.5\,J} & $480\times$ energy cut, 0\,GB NVMe wear \\
 \bottomrule
