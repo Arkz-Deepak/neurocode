@@ -140,38 +140,38 @@ NeuroCode implements the open Model Context Protocol standard over stdio JSON-RP
 \begin{lstlisting}[language=bash,caption={Stdio MCP JSON-RPC 2.0 Tool Protocol.},label={lst:mcp}]
 {"jsonrpc": "2.0", "id": 1, "method": "initialize",
  "params": {"protocolVersion": "2024-11-05"}}
---> {"result": {"serverInfo": {"name": "neurocode-mcp", "version": "0.1.0"}}}
+--> {"result": {"serverInfo": {"name": "neurocode-mcp"}}}
 
 {"jsonrpc": "2.0", "id": 2, "method": "tools/call",
  "params": {"name": "neurocode_slice",
-            "arguments": {"workspace_path": ".", "budget": 1200}}}
---> {"result": {"content": [{"type": "text", "text": "Sliced 14 nodes, 894 tokens."}]}}
+            "arguments": {"path": ".", "budget": 1200}}}
+--> {"result": {"text": "Sliced 14 nodes, 894 tokens."}}
 \end{lstlisting}
 
 \subsection{Command-Line Interface (CLI)}
 Packaged on PyPI as \texttt{neurocode-ai}, developers can execute zero-configuration slicing in any CI/CD or local terminal:
 \begin{lstlisting}[language=bash]
 $ pip install neurocode-ai
-$ neurocode slice . --entry src/agent.py --budget 1200
-$ neurocode repair . --issue "Fix ZeroDivisionError in calc()" --provider ollama
+$ neurocode slice . --budget 1200
+$ neurocode repair . --issue "Fix ZeroDivisionError"
 \end{lstlisting}
 
 \section{Empirical Evaluation on Physical Laptop Hardware}
 
 \begin{table}[t]
 \centering
-\caption{\textbf{SWE-bench Lite Performance on Physical RTX 3050 Laptop.}}
+\caption{SWE-bench Lite Performance on Physical RTX 3050 Laptop GPU (3.67\,GB VRAM)}
 \label{tab:results}
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{lcccc}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
 \textbf{Method} & \textbf{Valid Patch} & \textbf{Unit-Test} & \textbf{Peak VRAM} & \textbf{CUDA OOM} \\
  & \textbf{Applied (\%)} & \textbf{Resolved (\%)} & \textbf{(GB)} & \textbf{Crash Rate} \\
 \midrule
-Un-sliced Baseline & 0.0\% (0/292) & 0.0\% (0/292) & $>3.67$ & \textbf{100.0\%} \\
-BM25 Text Search   & 14.7\% (43/292) & 2.1\% (6/292) & 2.84 & 0.0\% \\
-Tree-sitter AST    & 26.0\% (76/292) & 4.8\% (14/292) & 2.45 & 0.0\% \\
-\textbf{NeuroCode (Ours)} & \textbf{41.4\% (121/292)} & \textbf{9.5\% (28/292)} & \textbf{2.12} & \textbf{0.0\%} \\
+Un-sliced Baseline & \phantom{0}0.0\% \phantom{0}(0/292) & 0.0\% \phantom{0}(0/292) & $>3.67$ & \textbf{100.0\%} \\
+BM25 Text Search   & 14.7\% (43/292) & 2.1\% \phantom{0}(6/292) & 2.84 & \phantom{00}0.0\% \\
+Tree-sitter AST    & 26.0\% (76/292) & 4.8\% (14/292) & 2.45 & \phantom{00}0.0\% \\
+\textbf{NeuroCode (Ours)} & \textbf{41.4\% (121/292)} & \textbf{9.5\% (28/292)} & \textbf{2.12} & \phantom{00}\textbf{0.0\%} \\
 \bottomrule
 \end{tabular}%
 }
@@ -199,6 +199,7 @@ We evaluated NeuroCode on the full SWE-bench Lite benchmark (292 real-world GitH
 \label{fig:empirical}
 \end{figure}
 
+\balance
 \section{Demonstration Walkthrough}
 
 In the interactive demonstration session, attendees will experience a live, hands-on repair cycle on an RTX 3050 laptop:
