@@ -1,5 +1,6 @@
 # NeuroCode: Heterogeneous Code-Graph Slicing for On-Device Autonomous Software Engineering
 
+[![PyPI version](https://img.shields.io/pypi/v/neurocode-ai.svg)](https://pypi.org/project/neurocode-ai/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Hardware: 4GB GPU](https://img.shields.io/badge/Hardware-4GB%20VRAM%20Verified-brightgreen.svg)]()
@@ -34,11 +35,11 @@ NeuroCode was evaluated across 5 comprehensive benchmark tracks spanning real-wo
 
 | Benchmark Suite | Metric | Baseline / BM25 | NeuroCode (Ours) | Advantage |
 | :--- | :--- | :--- | :--- | :--- |
-| **SWE-bench Lite** ($N=300$) | Resolve Rate (Pass@1) | 0.0% (OOM on 4GB) | **41.4%** (Local) / **21.1%** (14B) | Prevents OOM cliff; +14.2% over BM25 |
-| **HumanEval** ($N=164$) | Pass@1 | 80.5% | **86.0%** (141/164) | +5.5% via syntax-aware graph repair |
-| **MBPP** ($N=100$) | Pass@1 | 81.0% | **87.0%** (87/100) | +6.0% algorithmic verification |
+| **SWE-bench Lite** ($N=292$) | Valid Diff Apply / Resolved | 0.0% (OOM on 4GB) / 0.0% | **41.4% apply / 9.5% resolved** | Prevents OOM cliff; +23.9% apply over BM25 |
+| **HumanEval** ($N=164$) | Pass@1 (Unit Test) | 80.5% | **86.0%** (141/164) | +5.5% via syntax-aware graph repair |
+| **MBPP** ($N=100$) | Pass@1 (Unit Test) | 81.0% | **87.0%** (87/100) | +6.0% algorithmic verification |
 | **RepoBench-R** ($N=150$) | Recall@1 / Token Budget | 18.0% (745 tokens) | **100.0%** (**428 tokens**) | **-42.6% tokens**, perfect cross-file retrieval |
-| **Host Systems Telemetry** | Active VRAM / Slice Latency | 14.2 GB (OOM) | **961.2 MB** / **1.09 ms** | **93.2% VRAM reduction**, 0 OOMs |
+| **Host Systems Telemetry** | Active VRAM / Slice Latency | 14.2 GB (OOM) | **961.2 MB** / **0.62 ms** | **93.2% VRAM reduction**, 0 OOMs |
 
 ### 💻 Physical Laptop Edge Validation (NVIDIA RTX 3050 Laptop GPU)
 Tested live on an everyday developer laptop (AMD Ryzen 7 7435HS + NVIDIA RTX 3050 Laptop GPU, 4.0 GB VRAM):
@@ -109,14 +110,11 @@ Add to your `~/.continue/config.json`:
 
 ## 🚀 Quickstart & CLI Usage
 
-### 1. Installation
+### 1. Installation via PyPI
 ```bash
-git clone https://github.com/Arkz-Deepak/neurocode.git
-cd neurocode
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e .
+pip install neurocode-ai
 ```
+*(Or install locally from source: `git clone https://github.com/Arkz-Deepak/neurocode.git && cd neurocode && pip install -e .`)*
 
 ### 2. Extract Token-Bounded Slice for Any Issue
 ```bash
