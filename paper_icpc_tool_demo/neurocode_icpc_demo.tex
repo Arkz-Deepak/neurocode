@@ -74,7 +74,7 @@ To overcome these constraints, we present \textbf{NeuroCode}, an open-source, ze
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.98\columnwidth]{figures/fig2_system_architecture_4x3.png}
+\includegraphics[width=\columnwidth]{figures/fig2_system_architecture_4x3.png}
 \caption{System architecture of NeuroCode: in-memory CPG construction, bidirectional reachability slicing under token budget $B \le 1,200$, and execution via local Ollama, VS Code, and MCP stdio interfaces.}
 \label{fig:arch}
 \end{figure}
@@ -110,7 +110,7 @@ To prevent flash storage wear from thousands of temporary patch generations, Neu
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.98\columnwidth]{figures/fig5_hardware_oom_cliff.png}
+\includegraphics[width=\columnwidth]{figures/fig5_hardware_oom_cliff.png}
 \caption{Measured GPU VRAM consumption over execution time on the physical NVIDIA GeForce RTX 3050 Laptop GPU (3.67\,GB physical ceiling). NeuroCode remains stably below 2.12\,GB, while the un-sliced baseline immediately breaches the physical ceiling.}
 \label{fig:vram}
 \end{figure}
@@ -120,7 +120,7 @@ To prevent flash storage wear from thousands of temporary patch generations, Neu
 NeuroCode is built as an open, modular ecosystem accessible through multiple developer surfaces:
 
 \subsection{Visual Studio Code Extension}
-The official extension (\texttt{DeepakR.neurocode-ai}) integrates directly into developer workflows via native VS Code commands and MCP stdio tools (Listing~\ref{fig:mcp}):
+The official extension (\texttt{DeepakR.neurocode-ai}) integrates directly into developer workflows via native VS Code commands and MCP stdio tools:
 \begin{itemize}
     \item \textbf{Status Bar Indicator}: Displays real-time GPU VRAM and tmpfs health with 1-click access to quick actions.
     \item \textbf{Editor Context Slicing}: Developers can right-click any active code file or highlighted block to extract the sub-1,200 token reachability closure in under 100\,ms.
@@ -128,9 +128,16 @@ The official extension (\texttt{DeepakR.neurocode-ai}) integrates directly into 
     \item \textbf{Autonomous Diff Viewer}: Spawns local Ollama inference and automatically opens a side-by-side unified diff comparison in VS Code.
 \end{itemize}
 
-\begin{figure}[t]
-\centering
-\begin{lstlisting}[language=bash,caption={Invoking NeuroCode via stdio MCP JSON-RPC protocol.}]
+\subsection{Model Context Protocol (MCP) Server}
+NeuroCode implements the open Model Context Protocol standard over stdio JSON-RPC 2.0 (Listing~\ref{lst:mcp}). It exposes four native tools to any MCP-compliant client (Cursor, Claude Desktop, LibreChat):
+\begin{enumerate}
+    \item \texttt{neurocode\_slice}: Extracts bounded CPG closures for any file path and token budget.
+    \item \texttt{neurocode\_repair}: Triggers end-to-end edge bug repair with local Ollama backbones.
+    \item \texttt{neurocode\_hardware\_health}: Inspects GPU VRAM allocation and tmpfs capacity.
+    \item \texttt{neurocode\_patch}: Validates and applies unified diffs in memory.
+\end{enumerate}
+
+\begin{lstlisting}[language=bash,caption={Stdio MCP JSON-RPC 2.0 Tool Protocol.},label={lst:mcp}]
 {"jsonrpc": "2.0", "id": 1, "method": "initialize",
  "params": {"protocolVersion": "2024-11-05"}}
 --> {"result": {"serverInfo": {"name": "neurocode-mcp", "version": "0.1.0"}}}
@@ -140,18 +147,6 @@ The official extension (\texttt{DeepakR.neurocode-ai}) integrates directly into 
             "arguments": {"workspace_path": ".", "budget": 1200}}}
 --> {"result": {"content": [{"type": "text", "text": "Sliced 14 nodes, 894 tokens."}]}}
 \end{lstlisting}
-\caption{Stdio JSON-RPC handshake and context slice execution over MCP.}
-\label{fig:mcp}
-\end{figure}
-
-\subsection{Model Context Protocol (MCP) Server}
-NeuroCode implements the open Model Context Protocol standard over stdio JSON-RPC 2.0 (Listing~\ref{fig:mcp}). It exposes four native tools to any MCP-compliant client (Cursor, Claude Desktop, LibreChat):
-\begin{enumerate}
-    \item \texttt{neurocode\_slice}: Extracts bounded CPG closures for any file path and token budget.
-    \item \texttt{neurocode\_repair}: Triggers end-to-end edge bug repair with local Ollama backbones.
-    \item \texttt{neurocode\_hardware\_health}: Inspects GPU VRAM allocation and tmpfs capacity.
-    \item \texttt{neurocode\_patch}: Validates and applies unified diffs in memory.
-\end{enumerate}
 
 \subsection{Command-Line Interface (CLI)}
 Packaged on PyPI as \texttt{neurocode-ai}, developers can execute zero-configuration slicing in any CI/CD or local terminal:
@@ -165,19 +160,21 @@ $ neurocode repair . --issue "Fix ZeroDivisionError in calc()" --provider ollama
 
 \begin{table}[t]
 \centering
-\caption{Empirical Comparison on SWE-bench Lite (292 real-world defects) evaluated on physical RTX 3050 Laptop GPU (3.67\,GB VRAM).}
+\caption{\textbf{SWE-bench Lite Performance on Physical RTX 3050 Laptop.}}
 \label{tab:results}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Configuration} & \textbf{Valid Patch} & \textbf{Unit-Test} & \textbf{Peak VRAM} & \textbf{CUDA OOM} \\
+\textbf{Method} & \textbf{Valid Patch} & \textbf{Unit-Test} & \textbf{Peak VRAM} & \textbf{CUDA OOM} \\
  & \textbf{Applied (\%)} & \textbf{Resolved (\%)} & \textbf{(GB)} & \textbf{Crash Rate} \\
 \midrule
-Un-sliced Baseline & 0.0\% & 0.0\% & $>3.67$ & \textbf{100.0\%} \\
-BM25 Text Search & 14.7\% & 2.1\% & 2.84 & 0.0\% \\
-Tree-sitter AST & 26.0\% & 4.8\% & 2.45 & 0.0\% \\
-\textbf{NeuroCode (Ours)} & \textbf{41.4\%} & \textbf{9.5\%} & \textbf{2.12} & \textbf{0.0\%} \\
+Un-sliced Baseline & 0.0\% (0/292) & 0.0\% (0/292) & $>3.67$ & \textbf{100.0\%} \\
+BM25 Text Search   & 14.7\% (43/292) & 2.1\% (6/292) & 2.84 & 0.0\% \\
+Tree-sitter AST    & 26.0\% (76/292) & 4.8\% (14/292) & 2.45 & 0.0\% \\
+\textbf{NeuroCode (Ours)} & \textbf{41.4\% (121/292)} & \textbf{9.5\% (28/292)} & \textbf{2.12} & \textbf{0.0\%} \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 \subsection{Hardware Testbeds: Physical Laptop vs. Cloud Scaling}
@@ -197,7 +194,7 @@ We evaluated NeuroCode on the full SWE-bench Lite benchmark (292 real-world GitH
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.98\columnwidth]{figures/fig1_empirical_comparison_4x3.png}
+\includegraphics[width=\columnwidth]{figures/fig1_empirical_comparison_4x3.png}
 \caption{\textbf{SWE-bench Lite Empirical Evaluation on Physical Laptop (RTX 3050 GPU).} (Left) Prompt token footprint on logarithmic scale (97.1\% reduction). (Right) Fault localization Recall@3 across methods (17.1\% vs. 3.1\% BM25/RepoMap).}
 \label{fig:empirical}
 \end{figure}
