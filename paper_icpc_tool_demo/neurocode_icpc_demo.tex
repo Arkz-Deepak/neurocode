@@ -111,7 +111,7 @@ To prevent flash storage wear from thousands of temporary patch generations, Neu
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.98\columnwidth]{figures/fig2_vram_telemetry.pdf}
-\caption{Measured GPU VRAM consumption over execution time on an NVIDIA GeForce RTX 3050 Laptop GPU (3.67\,GB limit). NeuroCode remains stably below 2.4\,GB, while the un-sliced baseline immediately breaches the physical ceiling.}
+\caption{Measured GPU VRAM consumption over execution time on the physical NVIDIA GeForce RTX 3050 Laptop GPU (3.67\,GB physical ceiling). NeuroCode remains stably below 2.12\,GB, while the un-sliced baseline immediately breaches the physical ceiling.}
 \label{fig:vram}
 \end{figure}
 
@@ -180,11 +180,15 @@ Tree-sitter AST & 26.0\% & 4.8\% & 2.45 & 0.0\% \\
 \end{tabular}
 \end{table}
 
-\subsection{Physical Hardware Telemetry}
-All benchmarks were performed on a commodity ASUS TUF Gaming A15 laptop featuring an AMD Ryzen 7 7435HS processor (16 threads, 3.1\,GHz), 16\,GB DDR5 RAM, and an NVIDIA GeForce RTX 3050 Laptop GPU with 4\,GB GDDR6 VRAM (3.67\,GB physical addressable limit).
+\subsection{Hardware Testbeds: Physical Laptop vs. Cloud Scaling}
+To guarantee full experimental transparency, our evaluation distinguishes between physical edge constraints and cloud scaling:
+\begin{itemize}
+    \item \textbf{Physical Edge Testbed (Local Laptop)}: An ASUS TUF Gaming A15 laptop featuring an AMD Ryzen 7 7435HS processor (16 threads, 3.1\,GHz), 16\,GB DDR5 RAM, and an NVIDIA GeForce RTX 3050 Laptop GPU with 4\,GB GDDR6 VRAM (\textbf{3.67\,GB physical addressable ceiling}) running Ubuntu Linux 24.04 LTS and volatile RAM tmpfs (\texttt{/dev/shm}). This testbed evaluates physical VRAM allocation (Table~\ref{tab:results}), OOM crash cliff elimination, 16.5\,W power telemetry, 0.62\,ms host knapsack latency, and zero NVMe drive wear.
+    \item \textbf{Cloud Scaling Testbed (Tesla T4 GPU)}: A cloud environment equipped with an NVIDIA Tesla T4 GPU (\textbf{14.56\,GB addressable VRAM}) utilized to evaluate backbone scalability up to 14B parameters (\texttt{Qwen2.5-Coder-14B-Instruct-bnb-4bit}) where physical 4\,GB VRAM limits do not apply.
+\end{itemize}
 
 \subsection{SWE-bench Lite Performance}
-We evaluated NeuroCode on the full SWE-bench Lite benchmark (292 real-world GitHub issues from major repositories including Django, SymPy, and Flask) using \texttt{Qwen2.5-Coder:1.5B} at 8-bit quantization. As shown in Table~\ref{tab:results}:
+We evaluated NeuroCode on the full SWE-bench Lite benchmark (292 real-world GitHub issues from major repositories including Django, SymPy, and Flask) on the physical RTX 3050 Laptop testbed using \texttt{Qwen2.5-Coder:1.5B} at 8-bit quantization. As shown in Table~\ref{tab:results}:
 \begin{itemize}
     \item \textbf{100\% OOM Crash Elimination}: The un-sliced baseline prompts exceeded 4,000 tokens, suffering a \textbf{100\% CUDA Out-Of-Memory fatal crash rate} on the RTX 3050 GPU (Fig.~\ref{fig:vram}).
     \item \textbf{Dual Metric Reporting}: NeuroCode enabled the 1.5B model to synthesize \textbf{41.4\% (121/292)} syntactically valid patches that applied cleanly to the repository, and resolved \textbf{9.5\% (28/292)} of complete end-to-end regression unit test suites in a single local shot.

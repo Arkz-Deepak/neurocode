@@ -208,7 +208,7 @@ The local LLM synthesizes a unified diff patch in a \textbf{single generation tu
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.88\textwidth]{figures/fig1_empirical_comparison_4x3.png}
-\caption{\textbf{SWE-bench Lite Empirical Evaluation ($N=292$ Tasks).} (Left) Prompt token footprint on logarithmic scale, demonstrating NeuroCode's 97.1\% reduction. (Right) Fault localization Recall@3 across methods, demonstrating 5.5$\times$ improvement over BM25 and RepoMap baselines.}
+\caption{\textbf{SWE-bench Lite Empirical Evaluation on Physical Laptop Testbed ($N=292$ Tasks, RTX 3050 GPU).} (Left) Prompt token footprint on logarithmic scale, demonstrating NeuroCode's 97.1\% reduction. (Right) Fault localization Recall@3 across methods, demonstrating 5.5$\times$ improvement over BM25 and RepoMap baselines.}
 \label{fig:empirical}
 \end{figure*}
 
@@ -256,11 +256,29 @@ We evaluate NeuroCode to answer four core systems questions:
 
 \textbf{Benchmark}: We evaluate on 292 real-world instances from the canonical SWE-bench Lite benchmark~\cite{jimenez2024swebench}, covering large-scale open-source Python codebases including Django, Astropy, SymPy, and Sphinx.
 
-\textbf{Hardware Testbed}:
-\begin{itemize}
-    \item \textbf{Physical Edge Testbed}: AMD Ryzen 7 7435HS Host CPU (8 cores, 16 threads, up to 4.5\,GHz), 16\,GB DDR5 host system DRAM, NVIDIA GeForce RTX 3050 Laptop GPU (3.67\,GB VRAM capacity, 128-bit bus, PCIe 4.0 x8), running Ubuntu Linux 24.04 LTS.
-    \item \textbf{Cloud Verification Testbed}: Google Cloud VM with NVIDIA Tesla T4 GPU (16\,GB VRAM), verified on public Kaggle Kernel.
-\end{itemize}
+\subsection{Hardware Testbeds: Physical Edge Laptop vs. Cloud Scaling Testbed}
+\label{sec:testbeds}
+
+To provide transparent, reproducible empirical evaluation, we explicitly partition our experiments across two distinct hardware environments:
+
+\begin{enumerate}
+    \item \textbf{Physical Edge Laptop Testbed (Core Feasibility)}:
+    \begin{itemize}
+        \item \textit{Processor}: AMD Ryzen 7 7435HS (8 physical cores, 16 threads, base 3.1\,GHz, boost up to 4.5\,GHz).
+        \item \textit{System Memory}: 16\,GB DDR5-4800 host DRAM.
+        \item \textit{Edge GPU}: NVIDIA GeForce RTX 3050 Laptop GPU with 4\,GB GDDR6 dedicated memory (\textbf{3.67\,GB physically addressable VRAM ceiling}, 128-bit memory bus width, PCIe 4.0 $\times$8).
+        \item \textit{Software \& Storage}: Ubuntu Linux 24.04 LTS, PyTorch 2.4+cu124, Linux \texttt{/dev/shm} tmpfs RAM execution.
+        \item \textit{Evaluations Conducted}: All primary physical edge experiments (Figures~\ref{fig:empirical}, \ref{fig:cliff}, \ref{fig:microbench}, \ref{fig:scaling_suite}, and Table~\ref{tab:swebench}). These evaluate physical KV-cache VRAM allocation (961.2\,MB peak), hardware OOM crash cliff elimination, real-time power telemetry (16.5\,W), PCIe bus latency (24.7\,$\mu$s), zero NVMe SSD drive wear, and SWE-bench Lite bug repair ($N=292$).
+    \end{itemize}
+
+    \item \textbf{Cloud Scaling Testbed (Backbone Capacity Scaling)}:
+    \begin{itemize}
+        \item \textit{Environment}: Dedicated Kaggle Cloud Linux Kernel / VM.
+        \item \textit{Accelerator}: NVIDIA Tesla T4 GPU with \textbf{14.56\,GB addressable VRAM} (16\,GB GDDR6).
+        \item \textit{Software}: Python 3.13, PyTorch 2.11+cu128.
+        \item \textit{Evaluations Conducted}: Evaluates architectural scaling when expanding from compact edge models (0.5B to 1.5B/7B) to larger SOTA model backbones (\texttt{Qwen2.5-Coder-14B-Instruct-bnb-4bit}) across $N=299$ SWE-bench Lite instances (Table~\ref{tab:port_summary}, Item 1b). This tests whether in-memory CPG knapsack reachability preserves repair accuracy on higher-parameter cloud models where VRAM is not severely constrained.
+    \end{itemize}
+\end{enumerate}
 
 \textbf{Baselines}: We benchmark against four canonical retrieval paradigms:
 \begin{enumerate}
@@ -305,7 +323,7 @@ Figure~\ref{fig:cliff} presents physical measurements collected during live exec
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.86\textwidth]{figures/fig4_systems_microbenchmarks.png}
-\caption{\textbf{MLSys Systems Microbenchmarking Suite.} (a) End-to-end execution latency across pipeline stages (log scale). (b) KV-Cache memory wall model comparing 2B and 9B backbones. (c) Host CPU knapsack slicing latency across token budgets. (d) PCIe host-to-device transfer latency vs. payload size.}
+\caption{\textbf{MLSys Systems Microbenchmarking Suite (Measured on Physical AMD Ryzen 7 + RTX 3050 Laptop Testbed).} (a) End-to-end execution latency across pipeline stages (log scale). (b) KV-Cache memory wall model comparing 2B and 9B backbones. (c) Host CPU knapsack slicing latency across token budgets. (d) PCIe host-to-device transfer latency vs. payload size.}
 \label{fig:microbench}
 \end{figure*}
 
@@ -322,7 +340,7 @@ Figure~\ref{fig:microbench} presents the microbenchmarking suite measuring hardw
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.86\textwidth]{figures/fig5_systems_scaling_suite.png}
-\caption{\textbf{Comprehensive Systems Scaling Suite \& Hardware Operating Envelope.} (a) Host CPU Tree-sitter parsing throughput on AMD Ryzen 7 7435HS across parallel thread allocations. (b) Topological reachability depth sensitivity ($k$-hop) vs. token consumption. (c) Storage I/O write wear on developer laptop NVMe SSD vs. \texttt{/dev/shm} tmpfs zero-wear execution. (d) Measured peak GPU VRAM across model backbones (0.5B to 14B) under NeuroCode relative to physical laptop (3.67\,GB) and mid-tier (8\,GB) VRAM hardware ceilings.}
+\caption{\textbf{Comprehensive Systems Scaling Suite \& Hardware Operating Envelope (Physical Laptop RTX 3050 vs. Tesla T4 Cloud Comparison).} (a) Host CPU Tree-sitter parsing throughput on AMD Ryzen 7 7435HS across parallel thread allocations. (b) Topological reachability depth sensitivity ($k$-hop) vs. token consumption. (c) Storage I/O write wear on developer laptop NVMe SSD vs. \texttt{/dev/shm} tmpfs zero-wear execution. (d) Measured peak GPU VRAM across model backbones (0.5B to 14B) under NeuroCode relative to physical laptop (3.67\,GB) and mid-tier (8\,GB) VRAM hardware ceilings, with 14B scaling evaluated on cloud Tesla T4.}
 \label{fig:scaling_suite}
 \end{figure*}
 
