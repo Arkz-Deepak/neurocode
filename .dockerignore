@@ -1,0 +1,13 @@
+.venv
+venv
+__pycache__
+*.pyc
+*.egg-info
+dist
+build
+.git
+data
+paper*
+kaggle*
+notebooks*
+tests
