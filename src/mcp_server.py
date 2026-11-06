@@ -28,11 +28,17 @@ from src.agent.patcher import PatchApplier, SYSTEM_PROMPT
 
 def get_hardware_health() -> Dict[str, Any]:
     """Inspects local hardware, VRAM, and tmpfs status."""
-    import torch
-    cuda_avail = torch.cuda.is_available()
-    device_name = torch.cuda.get_device_name(0) if cuda_avail else "CPU Only"
-    total_vram = torch.cuda.get_device_properties(0).total_memory / (1024**3) if cuda_avail else 0.0
-    allocated_vram = torch.cuda.memory_allocated() / (1024**2) if cuda_avail else 0.0
+    try:
+        import torch
+        cuda_avail = torch.cuda.is_available()
+        device_name = torch.cuda.get_device_name(0) if cuda_avail else "CPU Only"
+        total_vram = torch.cuda.get_device_properties(0).total_memory / (1024**3) if cuda_avail else 0.0
+        allocated_vram = torch.cuda.memory_allocated() / (1024**2) if cuda_avail else 0.0
+    except ImportError:
+        cuda_avail = False
+        device_name = "Host CPU (PyTorch optional / Ollama ready)"
+        total_vram = 0.0
+        allocated_vram = 0.0
     
     # tmpfs check
     shm_path = Path("/dev/shm")

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neurocode-ai"
-version = "0.1.0"
+version = "0.1.1"
 description = "Heterogeneous Code-Graph Slicing for On-Device Autonomous SWE Agents"
 readme = "README.md"
 authors = [{ name = "Deepak R." }]

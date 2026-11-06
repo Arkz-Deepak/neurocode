@@ -21,7 +21,12 @@ from typing import Optional
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-import torch
+try:
+    import torch
+    HAS_TORCH = True
+except ImportError:
+    torch = None
+    HAS_TORCH = False
 
 from src.graph.builder import RepoGraphBuilder
 from src.graph.slicer import CodeGraphSlicer
@@ -29,10 +34,16 @@ from src.agent.patcher import PatchApplier, SYSTEM_PROMPT
 
 
 def get_hardware_info():
-    cuda_avail = torch.cuda.is_available()
-    device_name = torch.cuda.get_device_name(0) if cuda_avail else "CPU Only"
-    total_vram = torch.cuda.get_device_properties(0).total_memory / (1024**3) if cuda_avail else 0.0
-    allocated_vram = torch.cuda.memory_allocated() / (1024**2) if cuda_avail else 0.0
+    if HAS_TORCH:
+        cuda_avail = torch.cuda.is_available()
+        device_name = torch.cuda.get_device_name(0) if cuda_avail else "CPU Only"
+        total_vram = torch.cuda.get_device_properties(0).total_memory / (1024**3) if cuda_avail else 0.0
+        allocated_vram = torch.cuda.memory_allocated() / (1024**2) if cuda_avail else 0.0
+    else:
+        cuda_avail = False
+        device_name = "Host CPU (PyTorch optional / Ollama ready)"
+        total_vram = 0.0
+        allocated_vram = 0.0
 
     print("==========================================================================")
     print("                    NEUROCODE HARDWARE STATUS                             ")
@@ -154,6 +165,11 @@ def cmd_repair(args):
             print("     Make sure Ollama is running (`ollama serve`).")
             return
     else:
+        if not HAS_TORCH:
+            print("[Error] PyTorch is required for local HuggingFace transformers inference.")
+            print("        Install it via: pip install torch")
+            print("        Or use local Ollama inference with zero PyTorch dependency: --provider ollama")
+            return
         print(f"\n[2/4] Loading local LLM: {args.model} on GPU...")
         from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 
