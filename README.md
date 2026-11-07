@@ -1,12 +1,13 @@
 # NeuroCode: Heterogeneous Code-Graph Slicing for On-Device Autonomous Software Engineering
 
 [![PyPI version](https://img.shields.io/pypi/v/neurocode-ai.svg)](https://pypi.org/project/neurocode-ai/)
+[![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/DeepakR.neurocode-ai.svg?label=VS%20Code%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=DeepakR.neurocode-ai)
+[![Glama MCP Server](https://glama.ai/mcp/servers/Arkz-Deepak/neurocode/badge)](https://glama.ai/mcp/servers/Arkz-Deepak/neurocode)
+[![Awesome MCP Servers](https://img.shields.io/badge/Awesome--MCP--Servers-Listed-green.svg)](https://github.com/punkpeye/awesome-mcp-servers)
+[![ICPC 2027](https://img.shields.io/badge/ICPC%202027-Submission%20%2363-purple.svg)](https://conf.researchr.org/home/icpc-2027)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Hardware: 4GB GPU](https://img.shields.io/badge/Hardware-4GB%20VRAM%20Verified-brightgreen.svg)]()
-[![Model Context Protocol](https://img.shields.io/badge/MCP-2024--11--05%20Stdio-blueviolet.svg)](https://modelcontextprotocol.io)
-[![Ollama Integration](https://img.shields.io/badge/Ollama-Offline%20Native-orange.svg)](https://ollama.ai)
-[![Kaggle: Verified](https://img.shields.io/badge/Kaggle-Notebook%20Live-20beff.svg)](https://www.kaggle.com/code/deepark121/neurocode-heterogeneous-graph-sliced-swe-agent)
 
 **NeuroCode** is a lightweight, heterogeneous neuro-symbolic framework and **Model Context Protocol (MCP)** server that enables small, local language models (1.5B–14B parameters) to fix multi-file software engineering bugs on consumer laptops (e.g., 4GB–8GB VRAM) without cloud API dependency or Out-of-Memory (OOM) crashes.
 
@@ -108,6 +109,24 @@ Add to your `~/.continue/config.json`:
 
 ---
 
+## 💻 Visual Studio Code Extension
+
+Install directly from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=DeepakR.neurocode-ai):
+
+```bash
+code --install-extension DeepakR.neurocode-ai
+```
+
+*(Or download the `.vsix` binary from the [v0.1.0 Release](https://github.com/Arkz-Deepak/neurocode/releases/tag/v0.1.0))*
+
+### Extension Features:
+- **Status Bar Telemetry**: Live VRAM headroom and `/dev/shm` RAM health indicators.
+- **Context Slicing**: Right-click any active file or code block to extract sub-1,200 token reachability closure in $<100$ ms.
+- **1-Click Prompt Copy**: Instant paste into Cursor, Claude, or Copilot without context overflow.
+- **Autonomous Diff Viewer**: Direct side-by-side patch inspection powered by local Ollama backbones.
+
+---
+
 ## 🚀 Quickstart & CLI Usage
 
 ### 1. Installation via PyPI
@@ -151,10 +170,15 @@ neurocode-copilot
 
 ## 📄 Publications & Preprints
 
-- **IEEE Transactions on Software Engineering (TSE)**: [`paper_ieee_tse/neurocode_tse.tex`](paper_ieee_tse/neurocode_tse.tex)
-- **IEEE Conference Modular Package**: [`paper_modular_ieee/neurocode_modular_paper.tex`](paper_modular_ieee/neurocode_modular_paper.tex)
-- **MLSys Conference Format**: [`paper_mlsys/neurocode_mlsys.tex`](paper_mlsys/neurocode_mlsys.tex)
-- **Kaggle Competition Executable Notebook**: [Kaggle Notebook Live](https://www.kaggle.com/code/deepark121/neurocode-heterogeneous-graph-sliced-swe-agent)
+- **35th IEEE/ACM International Conference on Program Comprehension (ICPC 2027)**:
+  - *Track*: Tool Demonstration Track (Submission #63)
+  - *Title*: *NeuroCode: In-Memory Code Property Graph Slicing and Edge SWE Agent for Resource-Constrained Environments*
+  - *Source*: [`paper_icpc_tool_demo/neurocode_icpc_demo.tex`](paper_icpc_tool_demo/neurocode_icpc_demo.tex)
+- **Journal of Systems and Software (Elsevier)**:
+  - *Track*: Full Research Article (Traditional Subscription, ₹0 APC)
+  - *Title*: *On-Device Autonomous Software Engineering: In-Memory Code Property Graph Reachability Slicing under Edge VRAM Constraints*
+  - *Source*: [`paper_elsevier_jss/neurocode_jss.tex`](paper_elsevier_jss/neurocode_jss.tex)
+- **Kaggle Empirical Reproduction**: [Kaggle Notebook Live](https://www.kaggle.com/code/deepark121/neurocode-heterogeneous-graph-sliced-swe-agent)
 
 ### Citation
 ```bibtex
