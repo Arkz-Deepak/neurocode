@@ -2,7 +2,7 @@
   "name": "neurocode-ai",
   "displayName": "NeuroCode - In-Memory Context Slicer & Local SWE Agent",
   "description": "Zero-daemon AST reachability slicer for local models (Ollama, Cursor, Claude). Fits repository context into sub-1,200 tokens for 4GB-8GB GPU bug repair.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "DeepakR",
   "author": {
     "name": "Deepak R.",

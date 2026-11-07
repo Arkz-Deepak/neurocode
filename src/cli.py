@@ -59,15 +59,18 @@ def get_hardware_info():
 
 
 def cmd_slice(args):
-    repo_path = Path(args.repo).resolve()
+    repo_target = args.repo_pos if args.repo_pos else args.repo
+    repo_path = Path(repo_target).resolve()
     if not repo_path.exists():
         print(f"[ERROR] Repository path does not exist: {repo_path}")
         sys.exit(1)
 
+    issue_query = args.issue or args.entry or "repository structure"
+
     print("==========================================================================")
     print(f"      NEUROCODE GRAPH CONTEXT SLICING: {repo_path.name}")
     print("==========================================================================")
-    print(f"Issue:  {args.issue}")
+    print(f"Target: {issue_query}")
     print(f"Budget: {args.budget} tokens\n")
 
     t0 = time.perf_counter()
@@ -77,9 +80,20 @@ def cmd_slice(args):
 
     t1 = time.perf_counter()
     slicer = CodeGraphSlicer(graph, max_tokens=args.budget)
-    seeds = slicer.find_seed_nodes(args.issue)
+    
+    seeds = []
+    if args.entry:
+        entry_clean = Path(args.entry).as_posix()
+        seeds = [n for n in graph.nodes if entry_clean in str(graph.nodes[n].get("file_path", "")) or entry_clean in str(n)]
+    
+    if not seeds:
+        seeds = slicer.find_seed_nodes(issue_query)
+
+    if not seeds and len(graph.nodes) > 0:
+        seeds = sorted(graph.nodes, key=lambda n: graph.degree(n), reverse=True)[:3]
+
     subgraph = slicer.extract_subgraph(seeds, k_hops=1)
-    slice_text = slicer.format_slice_for_llm(subgraph, seeds, query=args.issue, max_tokens=args.budget)
+    slice_text = slicer.format_slice_for_llm(subgraph, seeds, query=issue_query, max_tokens=args.budget)
     slice_ms = (time.perf_counter() - t1) * 1000
 
     token_count = int(len(slice_text.split()) * 1.3)
@@ -99,7 +113,8 @@ def cmd_slice(args):
 
 
 def cmd_repair(args):
-    repo_path = Path(args.repo).resolve()
+    repo_target = args.repo_pos if args.repo_pos else args.repo
+    repo_path = Path(repo_target).resolve()
     if not repo_path.exists():
         print(f"[ERROR] Repository path does not exist: {repo_path}")
         sys.exit(1)
@@ -275,9 +290,11 @@ def main():
 
     # Command: slice
     slice_parser = subparsers.add_parser("slice", help="Construct CPG and extract minimal token-budgeted slice")
+    slice_parser.add_argument("repo_pos", nargs="?", default=None, help="Path to repository directory (positional)")
     slice_parser.add_argument("--repo", type=str, default=".", help="Path to repository directory")
-    slice_parser.add_argument("--issue", type=str, required=True, help="Bug report description or traceback")
-    slice_parser.add_argument("--budget", type=int, default=1500, help="Maximum token budget for prompt")
+    slice_parser.add_argument("--entry", type=str, default=None, help="Entry file path to slice around")
+    slice_parser.add_argument("--issue", type=str, default=None, help="Bug report description or traceback")
+    slice_parser.add_argument("--budget", type=int, default=1200, help="Maximum token budget for prompt")
     slice_parser.add_argument("--output", type=str, default=None, help="Save sliced Markdown prompt to file")
 
     # Command: mcp
@@ -285,7 +302,9 @@ def main():
 
     # Command: repair
     repair_parser = subparsers.add_parser("repair", help="Perform end-to-end bug localization and patch synthesis")
+    repair_parser.add_argument("repo_pos", nargs="?", default=None, help="Path to repository directory (positional)")
     repair_parser.add_argument("--repo", type=str, default=".", help="Path to repository directory")
+    repair_parser.add_argument("--entry", type=str, default=None, help="Entry file path")
     repair_parser.add_argument("--issue", type=str, required=True, help="Bug report description or traceback")
     repair_parser.add_argument("--budget", type=int, default=1500, help="Maximum token budget")
     repair_parser.add_argument("--provider", type=str, default="transformers", choices=["transformers", "ollama"], help="Inference provider (transformers or ollama)")

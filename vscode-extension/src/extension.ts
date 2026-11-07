@@ -6,6 +6,28 @@ import * as fs from 'fs';
 let outputChannel: vscode.OutputChannel;
 let statusBarItem: vscode.StatusBarItem;
 
+function getNeurocodeBin(): string {
+    const config = vscode.workspace.getConfiguration('neurocode');
+    const customBin = config.get<string>('binaryPath', '');
+    if (customBin && fs.existsSync(customBin)) {
+        return customBin;
+    }
+
+    const home = process.env.HOME || '';
+    const paths = [
+        path.join(home, '.local/bin/neurocode'),
+        path.join(home, 'Project/research/.venv/bin/neurocode'),
+        '/usr/local/bin/neurocode'
+    ];
+
+    for (const p of paths) {
+        if (fs.existsSync(p)) {
+            return p;
+        }
+    }
+    return 'neurocode';
+}
+
 export function activate(context: vscode.ExtensionContext) {
     outputChannel = vscode.window.createOutputChannel('NeuroCode');
     context.subscriptions.push(outputChannel);
@@ -125,23 +147,17 @@ async function sliceActiveFile(copyToClipboard: boolean = false): Promise<string
     }, async () => {
         return new Promise<string | undefined>((resolve) => {
             const entryArg = entryFile ? `--entry "${entryFile}"` : '';
-            const cmd = `${pythonPath} -m neurocode.cli slice "${workspaceRoot}" ${entryArg} --budget ${tokenBudget}`;
+            const bin = getNeurocodeBin();
+            const cmd = `"${bin}" slice "${workspaceRoot}" ${entryArg} --budget ${tokenBudget}`;
 
             outputChannel.appendLine(`[Slice] Executing: ${cmd}`);
             outputChannel.show(true);
 
             exec(cmd, { cwd: workspaceRoot }, (error, stdout, stderr) => {
                 if (error) {
-                    // Fallback to direct script if installed as neurocode
-                    exec(`neurocode slice "${workspaceRoot}" ${entryArg} --budget ${tokenBudget}`, { cwd: workspaceRoot }, (err2, stdout2, stderr2) => {
-                        if (err2) {
-                            vscode.window.showErrorMessage(`NeuroCode Slicing Failed: ${stderr2 || err2.message}`);
-                            outputChannel.appendLine(`[Error] ${stderr2 || err2.message}`);
-                            resolve(undefined);
-                            return;
-                        }
-                        handleSliceSuccess(stdout2, copyToClipboard, resolve);
-                    });
+                    vscode.window.showErrorMessage(`NeuroCode Slicing Failed: ${stderr || error.message}`);
+                    outputChannel.appendLine(`[Error] ${stderr || error.message}`);
+                    resolve(undefined);
                     return;
                 }
                 handleSliceSuccess(stdout, copyToClipboard, resolve);
@@ -185,20 +201,13 @@ function handleSliceSuccess(stdout: string, copyToClipboard: boolean, resolve: (
  * Check GPU VRAM and Hardware Status
  */
 async function checkHardwareHealth() {
-    const config = vscode.workspace.getConfiguration('neurocode');
-    const pythonPath = config.get<string>('pythonPath', 'python3');
-
     outputChannel.appendLine('[Health] Checking Hardware & GPU VRAM...');
+    const bin = getNeurocodeBin();
 
-    exec(`${pythonPath} -m neurocode.cli info`, (err, stdout, stderr) => {
+    exec(`"${bin}" info`, (err, stdout, stderr) => {
         if (err) {
-            exec(`neurocode info`, (err2, stdout2) => {
-                if (err2) {
-                    vscode.window.showWarningMessage('Could not retrieve hardware status. Make sure neurocode-ai is installed.');
-                    return;
-                }
-                showHardwareInfo(stdout2);
-            });
+            vscode.window.showWarningMessage(`Could not retrieve hardware status: ${stderr || err.message}`);
+            outputChannel.appendLine(`[Error] ${stderr || err.message}`);
             return;
         }
         showHardwareInfo(stdout);
@@ -250,7 +259,8 @@ async function repairIssue() {
     }, async () => {
         return new Promise<void>((resolve) => {
             const escapedIssue = issueText.replace(/"/g, '\\"');
-            const cmd = `${pythonPath} -m neurocode.cli repair "${workspaceRoot}" --issue "${escapedIssue}" --provider ollama --model "${ollamaModel}" --budget ${tokenBudget}`;
+            const bin = getNeurocodeBin();
+            const cmd = `"${bin}" repair "${workspaceRoot}" --issue "${escapedIssue}" --provider ollama --model "${ollamaModel}" --budget ${tokenBudget}`;
 
             outputChannel.appendLine(`[Repair] ${cmd}`);
             outputChannel.show(true);
@@ -258,7 +268,7 @@ async function repairIssue() {
             exec(cmd, { cwd: workspaceRoot, maxBuffer: 10 * 1024 * 1024 }, async (err, stdout, stderr) => {
                 outputChannel.appendLine(stdout || stderr);
                 if (err) {
-                    vscode.window.showErrorMessage(`NeuroCode Repair Error: ${err.message}`);
+                    vscode.window.showErrorMessage(`NeuroCode Repair Error: ${stderr || err.message}`);
                     resolve();
                     return;
                 }
