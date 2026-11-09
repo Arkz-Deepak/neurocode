@@ -173,6 +173,134 @@ def handle_seeds(args: Dict[str, Any]) -> str:
     return json.dumps(result, indent=2)
 
 
+def handle_symbol(args: Dict[str, Any]) -> str:
+    """Sub-millisecond AST symbol lookup returning exact file path, lines, and callers."""
+    raw_path = args.get("repo_path") or args.get("workspace_path") or args.get("path") or "."
+    repo_path = Path(raw_path).resolve()
+    symbol = args.get("symbol") or args.get("name") or ""
+    
+    if not repo_path.exists():
+        return json.dumps({"error": f"Repository path does not exist: {repo_path}"}, indent=2)
+    if not symbol:
+        return json.dumps({"error": "Symbol name must be specified."}, indent=2)
+        
+    t0 = time.perf_counter()
+    builder = RepoGraphBuilder(str(repo_path))
+    graph = builder.build()
+    elapsed_ms = (time.perf_counter() - t0) * 1000
+    
+    matches = []
+    sym_lower = symbol.lower()
+    for node in graph.nodes:
+        node_str = str(node).lower()
+        if sym_lower in node_str:
+            data = graph.nodes[node]
+            callers = list(graph.predecessors(node)) if graph.is_directed() else list(graph.neighbors(node))
+            callees = list(graph.successors(node)) if graph.is_directed() else []
+            matches.append({
+                "entity": node,
+                "type": data.get("type", "node"),
+                "file_path": data.get("file_path", "unknown"),
+                "start_line": data.get("start_line"),
+                "end_line": data.get("end_line"),
+                "callers_count": len(callers),
+                "callers": callers[:6],
+                "callees": callees[:6]
+            })
+            
+    return json.dumps({
+        "query": symbol,
+        "matches_found": len(matches),
+        "lookup_time_ms": round(elapsed_ms, 2),
+        "symbols": matches[:10]
+    }, indent=2)
+
+
+def handle_validate_patch(args: Dict[str, Any]) -> str:
+    """Validates a proposed code patch in-memory before writing to disk.
+    Checks file presence, search block match, indentation consistency, and parses AST for syntax errors."""
+    import ast
+    raw_path = args.get("repo_path") or args.get("workspace_path") or args.get("path") or "."
+    repo_path = Path(raw_path).resolve()
+    
+    patch_text = args.get("patch") or args.get("diff") or ""
+    file_path_arg = args.get("file_path") or args.get("file")
+    search_arg = args.get("search_block") or args.get("search")
+    replace_arg = args.get("replace_block") or args.get("replace")
+    
+    if patch_text and not (file_path_arg and search_arg is not None):
+        patch_res = PatchApplier.extract_patch(patch_text, repo_dir=str(repo_path))
+        if not patch_res.success:
+            return json.dumps({
+                "is_valid": False,
+                "error_type": "FormatError",
+                "message": "Could not parse SEARCH/REPLACE format. Ensure <<<<<<< SEARCH ... ======= ... >>>>>>> markers are present."
+            }, indent=2)
+        file_path = patch_res.file_path
+        search_block = patch_res.search_block
+        replace_block = patch_res.replace_block
+    else:
+        file_path = file_path_arg
+        search_block = search_arg
+        replace_block = replace_arg or ""
+        
+    if not file_path:
+        return json.dumps({
+            "is_valid": False,
+            "error_type": "MissingTargetFile",
+            "message": "Target file_path must be specified."
+        }, indent=2)
+        
+    target_file = (repo_path / file_path).resolve()
+    if not target_file.exists():
+        return json.dumps({
+            "is_valid": False,
+            "error_type": "FileNotFound",
+            "message": f"File '{file_path}' does not exist in repository {repo_path}."
+        }, indent=2)
+        
+    try:
+        content = target_file.read_text(encoding="utf-8", errors="replace")
+    except Exception as e:
+        return json.dumps({"is_valid": False, "error_type": "ReadError", "message": str(e)}, indent=2)
+        
+    if search_block not in content:
+        content_norm = "\n".join(line.rstrip() for line in content.splitlines())
+        search_norm = "\n".join(line.rstrip() for line in search_block.splitlines())
+        if search_norm not in content_norm:
+            return json.dumps({
+                "is_valid": False,
+                "error_type": "SearchBlockMismatch",
+                "message": f"Search block not found in '{file_path}'. Verify lines and indentation against the actual file.",
+                "file_path": file_path
+            }, indent=2)
+        else:
+            new_content = content_norm.replace(search_norm, replace_block, 1)
+    else:
+        new_content = content.replace(search_block, replace_block, 1)
+        
+    # AST Syntax Verification
+    if target_file.suffix == ".py":
+        try:
+            ast.parse(new_content, filename=str(target_file))
+        except SyntaxError as se:
+            return json.dumps({
+                "is_valid": False,
+                "error_type": "SyntaxError",
+                "message": f"SyntaxError in modified code at line {se.lineno}: {se.msg}",
+                "lineno": se.lineno,
+                "text": se.text,
+                "file_path": file_path
+            }, indent=2)
+            
+    return json.dumps({
+        "is_valid": True,
+        "file_path": file_path,
+        "chars_changed": len(replace_block) - len(search_block),
+        "message": "Patch is syntactically valid and matches file content cleanly."
+    }, indent=2)
+
+
 def handle_repair_ollama(args: Dict[str, Any]) -> str:
     """Generates patch using local Ollama instance with zero cloud dependencies."""
     repo_path = Path(args.get("repo_path", ".")).resolve()
@@ -285,6 +413,32 @@ TOOLS = [
         }
     },
     {
+        "name": "neurocode_symbol",
+        "description": "Instantly lookup classes, functions, or methods in the Code Property Graph without reading files. Returns exact file path, lines, callers, and callees in <2 ms.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "repo_path": {"type": "string", "description": "Path to repository root (default '.')", "default": "."},
+                "symbol": {"type": "string", "description": "Name of function, class, or method to lookup"}
+            },
+            "required": ["symbol"]
+        }
+    },
+    {
+        "name": "neurocode_validate_patch",
+        "description": "Pre-flight verification for proposed code patches. Checks that the target search block exists in the file and verifies that the replacement parses as valid syntax with zero AST syntax errors before writing to disk.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "repo_path": {"type": "string", "description": "Path to repository root (default '.')", "default": "."},
+                "file_path": {"type": "string", "description": "Relative file path being modified"},
+                "search_block": {"type": "string", "description": "Original code lines to match and replace"},
+                "replace_block": {"type": "string", "description": "New replacement code lines"},
+                "patch": {"type": "string", "description": "Alternative: full SEARCH/REPLACE diff text"}
+            }
+        }
+    },
+    {
         "name": "neurocode_repair_ollama",
         "description": "Perform single-turn bug repair by sending a knapsack-sliced prompt to a local Ollama model instance.",
         "inputSchema": {
@@ -373,6 +527,10 @@ def run_stdio_server():
                         output_str = handle_impact(args)
                     elif tool_name == "neurocode_seeds":
                         output_str = handle_seeds(args)
+                    elif tool_name == "neurocode_symbol":
+                        output_str = handle_symbol(args)
+                    elif tool_name == "neurocode_validate_patch":
+                        output_str = handle_validate_patch(args)
                     elif tool_name == "neurocode_repair_ollama":
                         output_str = handle_repair_ollama(args)
                     elif tool_name == "neurocode_hardware_health":

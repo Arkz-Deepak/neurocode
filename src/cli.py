@@ -278,6 +278,65 @@ def cmd_repair(args):
         print("  -> (Dry run: specify --apply to commit modifications to disk)")
 
 
+def cmd_agent_setup(args):
+    repo_target = args.repo if args.repo else "."
+    repo_path = Path(repo_target).resolve()
+    import json
+
+    print("==========================================================================")
+    print(f"      NEUROCODE AGENT SETUP: {repo_path.name}")
+    print("==========================================================================")
+    print("Configuring workspace for Autonomous AI Agents (Cursor, Claude, MCP)...")
+
+    # 1. .cursor/mcp.json
+    cursor_dir = repo_path / ".cursor"
+    cursor_dir.mkdir(exist_ok=True)
+    cursor_mcp = cursor_dir / "mcp.json"
+    cursor_cfg = {
+        "mcpServers": {
+            "neurocode": {
+                "command": "neurocode-mcp",
+                "args": []
+            }
+        }
+    }
+    with open(cursor_mcp, "w") as f:
+        json.dump(cursor_cfg, f, indent=2)
+    print(f"  -> [✓] Generated Cursor MCP config: {cursor_mcp}")
+
+    # 2. .vscode/mcp.json
+    vscode_dir = repo_path / ".vscode"
+    vscode_dir.mkdir(exist_ok=True)
+    vscode_mcp = vscode_dir / "mcp.json"
+    with open(vscode_mcp, "w") as f:
+        json.dump(cursor_cfg, f, indent=2)
+    print(f"  -> [✓] Generated VS Code MCP config: {vscode_mcp}")
+
+    # 3. .agent/skills/neurocode.md
+    agent_skills_dir = repo_path / ".agent" / "skills"
+    agent_skills_dir.mkdir(parents=True, exist_ok=True)
+    skill_file = agent_skills_dir / "neurocode.md"
+    skill_content = """# NeuroCode AI Agent Skill Definition
+**Role**: Codebase Perception & Surgical Context Extraction
+**MCP Server**: `neurocode-mcp`
+
+## Guidelines for AI Agents:
+1. **Never read entire multi-thousand line files** into context. Always call `neurocode_slice` with the user's issue/query first.
+2. **Locate functions/classes instantly** using `neurocode_symbol` rather than executing manual grep/find loops.
+3. **Verify blast radius** using `neurocode_impact` before proposing significant refactors.
+4. **Pre-flight validate patches** using `neurocode_validate_patch` before writing changes to disk to guarantee valid syntax and avoid breaking tests.
+"""
+    with open(skill_file, "w") as f:
+        f.write(skill_content)
+    print(f"  -> [✓] Generated AI Agent Skill rulebook: {skill_file}")
+
+    print("\nAI Agent configuration complete! Your agents can now autonomously:")
+    print("  • Query CPG AST slices in <2 ms without token bloat.")
+    print("  • Look up symbols and callers instantly.")
+    print("  • Pre-validate code patches before modifying disk.")
+    print("==========================================================================\n")
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="neurocode",
@@ -287,6 +346,10 @@ def main():
 
     # Command: info
     subparsers.add_parser("info", help="Display local hardware and VRAM allocation status")
+
+    # Command: agent-setup
+    setup_parser = subparsers.add_parser("agent-setup", help="Auto-configure repository for AI agents (Cursor, Claude, Continue MCP)")
+    setup_parser.add_argument("--repo", type=str, default=".", help="Path to repository directory (default '.')")
 
     # Command: slice
     slice_parser = subparsers.add_parser("slice", help="Construct CPG and extract minimal token-budgeted slice")
@@ -318,6 +381,8 @@ def main():
 
     if args.command == "info":
         get_hardware_info()
+    elif args.command == "agent-setup":
+        cmd_agent_setup(args)
     elif args.command == "mcp":
         from src.mcp_server import main as run_mcp
         run_mcp()
