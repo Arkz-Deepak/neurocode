@@ -96,3 +96,43 @@ export class MathHelper {
     assert res["syntax_valid"] is True
     updated = ts_file.read_text(encoding="utf-8")
     assert "console.log('multiplying', x, y);" in updated
+
+
+def test_graft_with_passing_tests(tmp_path):
+    py_code = "def get_val(): return 10\n"
+    f = tmp_path / "mod.py"
+    f.write_text(py_code, encoding="utf-8")
+
+    res = graft_symbol(
+        repo_path=str(tmp_path),
+        file_path="mod.py",
+        symbol="get_val",
+        replacement_code="def get_val(): return 20\n",
+        apply=True,
+        test_command="python3 -c 'import sys; sys.exit(0)'"
+    )
+    assert res["success"] is True
+    assert res["test_passed"] is True
+    assert "return 20" in f.read_text(encoding="utf-8")
+
+
+def test_graft_with_failing_tests_and_auto_rollback(tmp_path):
+    py_code = "def get_val(): return 10\n"
+    f = tmp_path / "mod.py"
+    f.write_text(py_code, encoding="utf-8")
+
+    res = graft_symbol(
+        repo_path=str(tmp_path),
+        file_path="mod.py",
+        symbol="get_val",
+        replacement_code="def get_val(): return 999\n",
+        apply=True,
+        test_command="python3 -c 'import sys; sys.exit(1)'",
+        auto_rollback=True
+    )
+    assert res["success"] is False
+    assert res["test_passed"] is False
+    assert res["rolled_back"] is True
+    # Original file was restored!
+    assert "return 10" in f.read_text(encoding="utf-8")
+    assert "return 999" not in f.read_text(encoding="utf-8")

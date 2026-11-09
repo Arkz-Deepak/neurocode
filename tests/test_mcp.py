@@ -12,6 +12,8 @@ def test_mcp_tools_list_schema():
     assert "neurocode_symbol" in tool_names
     assert "neurocode_validate_patch" in tool_names
     assert "neurocode_graft" in tool_names
+    assert "neurocode_trace" in tool_names
+    assert "neurocode_map" in tool_names
     assert "neurocode_repair_ollama" in tool_names
     assert "neurocode_hardware_health" in tool_names
 

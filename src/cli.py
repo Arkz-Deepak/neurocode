@@ -344,15 +344,58 @@ def cmd_graft(args):
     symbol = args.symbol
     replacement = args.code
     apply = args.apply
-    res = graft_symbol(".", file_path, symbol, replacement, apply=apply)
+    test_cmd = args.test
+    auto_rollback = not args.no_rollback
+
+    res = graft_symbol(
+        ".",
+        file_path,
+        symbol,
+        replacement,
+        apply=apply,
+        test_command=test_cmd,
+        auto_rollback=auto_rollback
+    )
     if res.get("success"):
         print(f"[✓] AST Graft successful for symbol '{symbol}' in {file_path}")
         print(f"    Syntax Verified: {res['syntax_valid']}")
         print(f"    Applied to disk: {res['applied']}")
+        if test_cmd:
+            print(f"    Tests Passed: {res.get('test_passed')}")
         if res.get("diff"):
             print("\n" + res["diff"])
     else:
         print(f"[✗] AST Graft failed: {res.get('error')}")
+        if res.get("rolled_back"):
+            print("    [!] Safe auto-rollback executed: original file preserved.")
+
+
+def cmd_trace(args):
+    from src.graph.builder import RepoGraphBuilder
+    repo_target = args.repo if args.repo else "."
+    builder = RepoGraphBuilder(repo_target)
+    res = builder.trace_path(args.from_sym, args.to_sym)
+    if res.get("path_found"):
+        print(f"\n[✓] Execution Path Found ({res.get('hops')} hops):")
+        print(f"    From: {res.get('from_symbol')} -> To: {res.get('to_symbol')}\n")
+        for step in res.get("call_chain", []):
+            print(f"    [{step['step']}] {step['type'].upper()}: {step['name']} ({step['file']} Lines {step['lines']})")
+        print()
+    else:
+        print(f"\n[✗] {res.get('error', 'No path found.')}\n")
+
+
+def cmd_map(args):
+    from src.graph.builder import RepoGraphBuilder
+    repo_target = args.repo if args.repo else "."
+    builder = RepoGraphBuilder(repo_target)
+    mermaid_code = builder.generate_mermaid_map()
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as f:
+            f.write(f"```mermaid\n{mermaid_code}\n```\n")
+        print(f"[✓] Architecture map saved to {args.output}")
+    else:
+        print("\n```mermaid\n" + mermaid_code + "\n```\n")
 
 
 def main():
@@ -371,10 +414,23 @@ def main():
 
     # Command: graft
     graft_parser = subparsers.add_parser("graft", help="Deterministically graft/mutate an AST symbol without whitespace diff failures")
-    graft_parser.add_argument("file", type=str, help="Target file path (Python, JS, TS)")
+    graft_parser.add_argument("file", type=str, help="Target file path (Python, JS, TS, Go, Rust)")
     graft_parser.add_argument("--symbol", type=str, required=True, help="Function, method, or class name to replace")
     graft_parser.add_argument("--code", type=str, required=True, help="New code block to graft into the AST")
     graft_parser.add_argument("--apply", action="store_true", help="Apply graft directly to source file on disk")
+    graft_parser.add_argument("--test", type=str, default=None, help="Optional test command to run (e.g. 'pytest tests/test_billing.py')")
+    graft_parser.add_argument("--no-rollback", action="store_true", help="Do not revert code if test command fails")
+
+    # Command: trace
+    trace_parser = subparsers.add_parser("trace", help="Trace execution call paths connecting two functions or symbols")
+    trace_parser.add_argument("--from", dest="from_sym", type=str, required=True, help="Source function or symbol name")
+    trace_parser.add_argument("--to", dest="to_sym", type=str, required=True, help="Destination function or symbol name")
+    trace_parser.add_argument("--repo", type=str, default=".", help="Path to repository directory (default '.')")
+
+    # Command: map
+    map_parser = subparsers.add_parser("map", help="Generate zero-token Mermaid.js architecture flowchart of codebase")
+    map_parser.add_argument("--repo", type=str, default=".", help="Path to repository directory (default '.')")
+    map_parser.add_argument("--output", "-o", type=str, default=None, help="Optional file path to save Mermaid diagram (e.g. ARCHITECTURE.md)")
 
     # Command: slice
     slice_parser = subparsers.add_parser("slice", help="Construct CPG and extract minimal token-budgeted slice")
@@ -410,6 +466,10 @@ def main():
         cmd_agent_setup(args)
     elif args.command == "graft":
         cmd_graft(args)
+    elif args.command == "trace":
+        cmd_trace(args)
+    elif args.command == "map":
+        cmd_map(args)
     elif args.command == "mcp":
         from src.mcp_server import main as run_mcp
         run_mcp()

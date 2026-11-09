@@ -7,6 +7,7 @@ completely eliminating fragile multi-line whitespace and indentation diff failur
 import ast
 import difflib
 import os
+import subprocess
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 from tree_sitter import Node, Parser, Language
@@ -35,6 +36,22 @@ except Exception:
     _TSX_LANG = None
     _TSX_PARSER = None
 
+try:
+    import tree_sitter_go as tsgo
+    _GO_LANG = Language(tsgo.language())
+    _GO_PARSER = Parser(_GO_LANG)
+except Exception:
+    _GO_LANG = None
+    _GO_PARSER = None
+
+try:
+    import tree_sitter_rust as tsrs
+    _RUST_LANG = Language(tsrs.language())
+    _RUST_PARSER = Parser(_RUST_LANG)
+except Exception:
+    _RUST_LANG = None
+    _RUST_PARSER = None
+
 
 def get_parser_for_file(file_path: str) -> Parser:
     """Returns the appropriate Tree-sitter parser based on file extension."""
@@ -45,12 +62,17 @@ def get_parser_for_file(file_path: str) -> Parser:
         return _TS_PARSER
     elif ext in (".js", ".jsx", ".mjs", ".cjs") and _JS_PARSER:
         return _JS_PARSER
+    elif ext == ".go" and _GO_PARSER:
+        return _GO_PARSER
+    elif ext == ".rs" and _RUST_PARSER:
+        return _RUST_PARSER
     return _PY_PARSER
 
 
 def find_target_node(root: Node, symbol: str, code_bytes: bytes) -> Optional[Node]:
     """
     Locates the AST node corresponding to the given symbol name or 'ClassName.methodName'.
+    Supports Python, JavaScript, TypeScript, Go, and Rust.
     """
     def get_text(node: Optional[Node]) -> str:
         if not node:
@@ -66,26 +88,30 @@ def find_target_node(root: Node, symbol: str, code_bytes: bytes) -> Optional[Nod
     while stack:
         curr = stack.pop()
         
-        # Check Python Function
-        if curr.type in ("function_definition", "function_declaration", "method_definition"):
+        # Check Function or Method across Python, JS, TS, Go, Rust
+        if curr.type in ("function_definition", "function_declaration", "method_definition", "method_declaration", "function_item"):
             name_node = curr.child_by_field_name("name")
             if name_node and get_text(name_node) == target_name:
                 if target_class:
-                    # Verify parent class
+                    # Check parent class or impl
                     parent = curr.parent
-                    while parent and parent.type not in ("class_definition", "class_declaration"):
+                    while parent and parent.type not in ("class_definition", "class_declaration", "impl_item"):
                         parent = parent.parent
                     if parent:
-                        p_name_node = parent.child_by_field_name("name")
-                        if p_name_node and get_text(p_name_node) == target_class:
+                        p_name_node = parent.child_by_field_name("name") or parent.child_by_field_name("type")
+                        if p_name_node and target_class.lower() in get_text(p_name_node).lower():
                             return curr
+                    # Check Go receiver
+                    rec_node = curr.child_by_field_name("receiver")
+                    if rec_node and target_class.lower() in get_text(rec_node).lower():
+                        return curr
                 else:
                     return curr
 
-        # Check Python or JS/TS Class
-        elif curr.type in ("class_definition", "class_declaration"):
-            name_node = curr.child_by_field_name("name")
-            if not target_class and name_node and get_text(name_node) == target_name:
+        # Check Class, Struct, or Impl
+        elif curr.type in ("class_definition", "class_declaration", "type_declaration", "struct_item", "impl_item"):
+            name_node = curr.child_by_field_name("name") or curr.child_by_field_name("type")
+            if not target_class and name_node and target_name.lower() in get_text(name_node).lower():
                 return curr
 
         # Check JS/TS Arrow Function or Variable
@@ -93,7 +119,6 @@ def find_target_node(root: Node, symbol: str, code_bytes: bytes) -> Optional[Nod
             name_node = curr.child_by_field_name("name")
             val_node = curr.child_by_field_name("value")
             if name_node and get_text(name_node) == target_name:
-                # Return the declarator's parent lexical_declaration if possible
                 if curr.parent and curr.parent.type in ("lexical_declaration", "variable_declaration"):
                     return curr.parent
                 return curr
@@ -139,10 +164,13 @@ def graft_symbol(
     file_path: str,
     symbol: str,
     replacement_code: str,
-    apply: bool = False
+    apply: bool = False,
+    test_command: Optional[str] = None,
+    auto_rollback: bool = True
 ) -> Dict[str, Any]:
     """
     Performs deterministic AST subtree grafting for a target symbol.
+    Optionally executes test_command to verify business logic, with auto-rollback on test failure.
     """
     base_dir = Path(repo_path).resolve()
     target_file = (base_dir / file_path).resolve()
@@ -227,6 +255,59 @@ def graft_symbol(
                 "file_path": file_path
             }
 
+        # 7. Automated Test Verification (Self-Healing Loop)
+        if test_command:
+            try:
+                proc = subprocess.run(
+                    test_command,
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                    cwd=str(base_dir)
+                )
+                if proc.returncode != 0:
+                    # Test failed!
+                    if auto_rollback:
+                        target_file.write_text(original_source, encoding="utf-8")
+                        return {
+                            "success": False,
+                            "file_path": file_path,
+                            "symbol": symbol,
+                            "syntax_valid": True,
+                            "applied": False,
+                            "rolled_back": True,
+                            "test_passed": False,
+                            "test_exit_code": proc.returncode,
+                            "test_stdout": proc.stdout[:2000],
+                            "test_stderr": proc.stderr[:2000],
+                            "error": f"Unit tests failed with exit code {proc.returncode}. Changes were automatically rolled back to prevent repository breakage."
+                        }
+                    else:
+                        return {
+                            "success": True,
+                            "file_path": file_path,
+                            "symbol": symbol,
+                            "syntax_valid": True,
+                            "applied": True,
+                            "rolled_back": False,
+                            "test_passed": False,
+                            "test_exit_code": proc.returncode,
+                            "test_stdout": proc.stdout[:2000],
+                            "test_stderr": proc.stderr[:2000],
+                            "diff": diff_str,
+                            "message": f"Code grafted to disk, but tests failed (exit code {proc.returncode})."
+                        }
+            except Exception as te:
+                if auto_rollback:
+                    target_file.write_text(original_source, encoding="utf-8")
+                return {
+                    "success": False,
+                    "error": f"Error executing test command: {str(te)}",
+                    "file_path": file_path,
+                    "rolled_back": auto_rollback
+                }
+
     return {
         "success": True,
         "file_path": file_path,
@@ -236,6 +317,7 @@ def graft_symbol(
         "end_line": target_node.end_point[0] + 1,
         "syntax_valid": True,
         "applied": apply,
+        "test_passed": True if test_command else None,
         "diff": diff_str,
-        "message": "Subtree successfully grafted with 100% verified syntax."
+        "message": "Subtree successfully grafted with 100% verified syntax and tests passed." if test_command else "Subtree successfully grafted with 100% verified syntax."
     }

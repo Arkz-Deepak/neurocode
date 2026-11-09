@@ -309,6 +309,8 @@ def handle_graft(args: Dict[str, Any]) -> str:
     symbol = args.get("symbol") or args.get("target_symbol") or args.get("name") or ""
     replacement = args.get("replacement_code") or args.get("code") or args.get("replacement") or ""
     apply = bool(args.get("apply", False))
+    test_command = args.get("test_command") or args.get("test")
+    auto_rollback = bool(args.get("auto_rollback", True))
 
     if not file_path or not symbol or not replacement:
         return json.dumps({
@@ -321,9 +323,41 @@ def handle_graft(args: Dict[str, Any]) -> str:
         file_path=file_path,
         symbol=symbol,
         replacement_code=replacement,
-        apply=apply
+        apply=apply,
+        test_command=test_command,
+        auto_rollback=auto_rollback
     )
     return json.dumps(res, indent=2)
+
+
+def handle_trace(args: Dict[str, Any]) -> str:
+    """Finds the shortest execution call path connecting from_symbol to to_symbol in the CPG."""
+    raw_path = args.get("repo_path") or args.get("workspace_path") or args.get("path") or "."
+    repo_path = Path(raw_path).resolve()
+    from_sym = args.get("from") or args.get("from_symbol") or args.get("source") or ""
+    to_sym = args.get("to") or args.get("to_symbol") or args.get("target") or ""
+
+    if not repo_path.exists():
+        return json.dumps({"error": f"Repository path does not exist: {repo_path}"}, indent=2)
+    if not from_sym or not to_sym:
+        return json.dumps({"error": "Both 'from' and 'to' symbols must be specified."}, indent=2)
+
+    builder = RepoGraphBuilder(str(repo_path))
+    res = builder.trace_path(from_sym, to_sym)
+    return json.dumps(res, indent=2)
+
+
+def handle_map(args: Dict[str, Any]) -> str:
+    """Generates an architecture diagram (Mermaid.js flowchart) of the codebase."""
+    raw_path = args.get("repo_path") or args.get("workspace_path") or args.get("path") or "."
+    repo_path = Path(raw_path).resolve()
+
+    if not repo_path.exists():
+        return f"[Error] Repository path does not exist: {repo_path}"
+
+    builder = RepoGraphBuilder(str(repo_path))
+    mermaid_chart = builder.generate_mermaid_map()
+    return f"```mermaid\n{mermaid_chart}\n```"
 
 
 def handle_repair_ollama(args: Dict[str, Any]) -> str:
@@ -465,7 +499,7 @@ TOOLS = [
     },
     {
         "name": "neurocode_graft",
-        "description": "Perform deterministic AST subtree grafting on Python, TypeScript, or JavaScript code. Directly mutates/replaces a specific function, class, or method AST node without fragile whitespace/SEARCH/REPLACE diff errors. Enforces 100% syntax validity before applying changes.",
+        "description": "Perform deterministic AST subtree grafting on Python, TypeScript, JavaScript, Go, or Rust code. Directly mutates/replaces a specific function, class, or method AST node without fragile whitespace diff errors. Supports test_command with automated rollback on test failures.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -473,9 +507,34 @@ TOOLS = [
                 "file_path": {"type": "string", "description": "Relative path to file being modified"},
                 "symbol": {"type": "string", "description": "Function, method (e.g. 'ClassName.methodName'), or class to replace"},
                 "replacement_code": {"type": "string", "description": "New code block to graft into the AST"},
-                "apply": {"type": "boolean", "description": "Whether to write modifications to disk (default false for preview)", "default": False}
+                "apply": {"type": "boolean", "description": "Whether to write modifications to disk (default false for preview)", "default": False},
+                "test_command": {"type": "string", "description": "Optional test command to run after grafting (e.g. 'pytest tests/test_calc.py')"},
+                "auto_rollback": {"type": "boolean", "description": "Whether to revert file if test_command fails (default true)", "default": True}
             },
             "required": ["file_path", "symbol", "replacement_code"]
+        }
+    },
+    {
+        "name": "neurocode_trace",
+        "description": "Trace execution call paths connecting two functions, classes, or symbols across the codebase in <1 ms using in-memory Code Property Graph reachability.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "repo_path": {"type": "string", "description": "Path to repository root (default '.')", "default": "."},
+                "from": {"type": "string", "description": "Starting function or symbol name"},
+                "to": {"type": "string", "description": "Target function or destination symbol name"}
+            },
+            "required": ["from", "to"]
+        }
+    },
+    {
+        "name": "neurocode_map",
+        "description": "Generate a zero-token high-level architecture diagram (Mermaid.js flowchart) showing module relationships and call edges across the codebase.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "repo_path": {"type": "string", "description": "Path to repository root (default '.')", "default": "."}
+            }
         }
     },
     {
@@ -532,7 +591,7 @@ def run_stdio_server():
                         },
                         "serverInfo": {
                             "name": "neurocode-mcp",
-                            "version": "1.2.0"
+                            "version": "1.3.0"
                         }
                     }
                 }
@@ -573,6 +632,10 @@ def run_stdio_server():
                         output_str = handle_validate_patch(args)
                     elif tool_name == "neurocode_graft":
                         output_str = handle_graft(args)
+                    elif tool_name == "neurocode_trace":
+                        output_str = handle_trace(args)
+                    elif tool_name == "neurocode_map":
+                        output_str = handle_map(args)
                     elif tool_name == "neurocode_repair_ollama":
                         output_str = handle_repair_ollama(args)
                     elif tool_name == "neurocode_hardware_health":

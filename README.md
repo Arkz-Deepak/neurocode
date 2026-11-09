@@ -11,6 +11,19 @@
 
 **NeuroCode** is a lightweight, heterogeneous neuro-symbolic framework and **Model Context Protocol (MCP)** server that enables small, local language models (1.5B–14B parameters) to fix multi-file software engineering bugs on consumer laptops (e.g., 4GB–8GB VRAM) without cloud API dependency or Out-of-Memory (OOM) crashes.
 
+> 📌 **Academic Reproducibility Notice**:  
+> For benchmark reproduction and evaluation datasets corresponding to the **35th IEEE/ACM ICPC 2027 (Submission #63)** and the **Elsevier Journal of Systems and Software (`JSSOFTWARE-S-26-03997`)**, please refer to frozen release tag [`v0.1.1`](https://github.com/Arkz-Deepak/neurocode/releases/tag/v0.1.1). The `master` branch represents the actively maintained multi-language production release.
+
+---
+
+## 🌐 Multi-Language Code Property Graph & AST Grafting
+NeuroCode natively parses and deterministically mutates code across 5 programming languages using in-memory Tree-sitter AST grammars:
+- **Python** (`.py`)
+- **TypeScript** (`.ts`, `.tsx`)
+- **JavaScript** (`.js`, `.jsx`, `.mjs`, `.cjs`)
+- **Go** (`.go`)
+- **Rust** (`.rs`)
+
 ---
 
 ## 🏛️ System Architecture
@@ -56,10 +69,16 @@ Tested live on an everyday developer laptop (AMD Ryzen 7 7435HS + NVIDIA RTX 305
 NeuroCode provides an official stdio **Model Context Protocol (MCP)** server conforming to specification `2024-11-05`. Connect NeuroCode directly to Claude Desktop, Cursor, Continue.dev, or VS Code!
 
 ### Native MCP Tools Exposed:
-1. `neurocode_slice`: In-memory CPG reachability slicing bounded under token budget ($B \le 1,200$).
-2. `neurocode_seeds`: Static root-cause candidate entity discovery in $<2$ ms.
-3. `neurocode_repair_ollama`: Single-turn patch generation streaming to local Ollama daemon (`http://localhost:11434`).
-4. `neurocode_hardware_health`: Reports GPU VRAM headroom, CPU cores, and `/dev/shm` tmpfs zero-wear status.
+1. `neurocode_slice`: In-memory CPG reachability slicing bounded strictly under token budget ($B \le 1,200$).
+2. `neurocode_graft`: Deterministic AST subtree grafting with automatic indentation alignment and optional test verification with auto-rollback.
+3. `neurocode_trace`: Sub-millisecond execution call-chain path tracing connecting functions and symbols.
+4. `neurocode_map`: Instant zero-token architecture flowchart (Mermaid.js) of the codebase.
+5. `neurocode_impact`: Structural blast radius inspection (all upstream callers and downstream callee invocations in <2 ms).
+6. `neurocode_symbol`: Sub-millisecond AST symbol lookup returning file locations, line spans, and callers.
+7. `neurocode_validate_patch`: In-memory pre-flight patch verification for syntax errors before writing to disk.
+8. `neurocode_seeds`: Static root-cause candidate entity discovery in $<2$ ms.
+9. `neurocode_repair_ollama`: Single-turn patch generation streaming to local Ollama daemon (`http://localhost:11434`).
+10. `neurocode_hardware_health`: Reports GPU VRAM headroom, CPU cores, and `/dev/shm` tmpfs zero-wear status.
 
 ### 1. Claude Desktop Setup
 Add the following to your Claude Desktop configuration file:

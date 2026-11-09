@@ -32,6 +32,22 @@ except Exception:
     TSX_LANGUAGE = None
     _TSX_PARSER = None
 
+try:
+    import tree_sitter_go as tsgo
+    GO_LANGUAGE = Language(tsgo.language())
+    _GO_PARSER = Parser(GO_LANGUAGE)
+except Exception:
+    GO_LANGUAGE = None
+    _GO_PARSER = None
+
+try:
+    import tree_sitter_rust as tsrs
+    RUST_LANGUAGE = Language(tsrs.language())
+    _RUST_PARSER = Parser(RUST_LANGUAGE)
+except Exception:
+    RUST_LANGUAGE = None
+    _RUST_PARSER = None
+
 
 @dataclass
 class FunctionEntity:
@@ -331,9 +347,200 @@ def parse_js_ts_file(file_path: str, code_str: Optional[str] = None) -> ParsedFi
     return parsed
 
 
+def parse_go_file(file_path: str, code_str: Optional[str] = None) -> ParsedFile:
+    """Parses a Go source file (.go) and extracts functions, methods, structs, and imports."""
+    if code_str is None:
+        with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+            code_str = f.read()
+
+    code_bytes = code_str.encode("utf-8")
+    parser = _GO_PARSER or _PARSER
+    tree = parser.parse(code_bytes)
+    root = tree.root_node
+    parsed = ParsedFile(file_path=file_path)
+
+    def extract_text(node: Optional[Node]) -> str:
+        if not node:
+            return ""
+        return code_bytes[node.start_byte:node.end_byte].decode("utf-8", errors="replace")
+
+    def find_calls(node: Node) -> List[str]:
+        calls = []
+        stack = [node]
+        visited = set()
+        while stack:
+            curr = stack.pop()
+            if curr.id in visited:
+                continue
+            visited.add(curr.id)
+            if curr.type == "call_expression":
+                fn_node = curr.child_by_field_name("function")
+                if fn_node:
+                    calls.append(extract_text(fn_node))
+            for child in curr.children:
+                stack.append(child)
+        return list(dict.fromkeys(calls))
+
+    for child in root.children:
+        if child.type == "import_declaration":
+            for spec in child.children:
+                if spec.type == "import_spec_list":
+                    for s in spec.children:
+                        if s.type == "import_spec":
+                            p = s.child_by_field_name("path")
+                            if p:
+                                parsed.imports.append(ImportEntity(module=extract_text(p).strip('"'), names=[]))
+                elif spec.type == "import_spec":
+                    p = spec.child_by_field_name("path")
+                    if p:
+                        parsed.imports.append(ImportEntity(module=extract_text(p).strip('"'), names=[]))
+
+        elif child.type == "type_declaration":
+            for spec in child.children:
+                if spec.type == "type_spec":
+                    name_n = spec.child_by_field_name("name")
+                    name = extract_text(name_n)
+                    parsed.classes.append(ClassEntity(
+                        name=name,
+                        bases=[],
+                        start_line=child.start_point[0] + 1,
+                        end_line=child.end_point[0] + 1,
+                        docstring=None,
+                        methods=[],
+                        source_code=extract_text(child)
+                    ))
+
+        elif child.type == "method_declaration":
+            name_n = child.child_by_field_name("name")
+            name = extract_text(name_n)
+            rec_n = child.child_by_field_name("receiver")
+            receiver = extract_text(rec_n).strip("()* ") if rec_n else ""
+            receiver_type = receiver.split()[-1] if receiver else None
+            calls = find_calls(child)
+            parsed.functions.append(FunctionEntity(
+                name=name,
+                class_name=receiver_type,
+                start_line=child.start_point[0] + 1,
+                end_line=child.end_point[0] + 1,
+                docstring=None,
+                calls=calls,
+                source_code=extract_text(child)
+            ))
+
+        elif child.type == "function_declaration":
+            name_n = child.child_by_field_name("name")
+            name = extract_text(name_n)
+            calls = find_calls(child)
+            parsed.functions.append(FunctionEntity(
+                name=name,
+                class_name=None,
+                start_line=child.start_point[0] + 1,
+                end_line=child.end_point[0] + 1,
+                docstring=None,
+                calls=calls,
+                source_code=extract_text(child)
+            ))
+
+    return parsed
+
+
+def parse_rust_file(file_path: str, code_str: Optional[str] = None) -> ParsedFile:
+    """Parses a Rust source file (.rs) and extracts functions, structs, impl blocks, and use declarations."""
+    if code_str is None:
+        with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+            code_str = f.read()
+
+    code_bytes = code_str.encode("utf-8")
+    parser = _RUST_PARSER or _PARSER
+    tree = parser.parse(code_bytes)
+    root = tree.root_node
+    parsed = ParsedFile(file_path=file_path)
+
+    def extract_text(node: Optional[Node]) -> str:
+        if not node:
+            return ""
+        return code_bytes[node.start_byte:node.end_byte].decode("utf-8", errors="replace")
+
+    def find_calls(node: Node) -> List[str]:
+        calls = []
+        stack = [node]
+        visited = set()
+        while stack:
+            curr = stack.pop()
+            if curr.id in visited:
+                continue
+            visited.add(curr.id)
+            if curr.type == "call_expression":
+                fn_node = curr.child_by_field_name("function")
+                if fn_node:
+                    calls.append(extract_text(fn_node))
+            for child in curr.children:
+                stack.append(child)
+        return list(dict.fromkeys(calls))
+
+    for child in root.children:
+        if child.type == "use_declaration":
+            arg = child.child_by_field_name("argument")
+            if arg:
+                parsed.imports.append(ImportEntity(module=extract_text(arg), names=[]))
+
+        elif child.type in ("struct_item", "enum_item"):
+            name_n = child.child_by_field_name("name")
+            name = extract_text(name_n)
+            parsed.classes.append(ClassEntity(
+                name=name,
+                bases=[],
+                start_line=child.start_point[0] + 1,
+                end_line=child.end_point[0] + 1,
+                docstring=None,
+                methods=[],
+                source_code=extract_text(child)
+            ))
+
+        elif child.type == "impl_item":
+            type_n = child.child_by_field_name("type")
+            impl_name = extract_text(type_n) if type_n else "<impl>"
+            body = child.child_by_field_name("body")
+            if body:
+                for sub in body.children:
+                    if sub.type == "function_item":
+                        name_n = sub.child_by_field_name("name")
+                        name = extract_text(name_n)
+                        calls = find_calls(sub)
+                        parsed.functions.append(FunctionEntity(
+                            name=name,
+                            class_name=impl_name,
+                            start_line=sub.start_point[0] + 1,
+                            end_line=sub.end_point[0] + 1,
+                            docstring=None,
+                            calls=calls,
+                            source_code=extract_text(sub)
+                        ))
+
+        elif child.type == "function_item":
+            name_n = child.child_by_field_name("name")
+            name = extract_text(name_n)
+            calls = find_calls(child)
+            parsed.functions.append(FunctionEntity(
+                name=name,
+                class_name=None,
+                start_line=child.start_point[0] + 1,
+                end_line=child.end_point[0] + 1,
+                docstring=None,
+                calls=calls,
+                source_code=extract_text(child)
+            ))
+
+    return parsed
+
+
 def parse_file(file_path: str, code_str: Optional[str] = None) -> ParsedFile:
-    """Universal parser dispatch: parses Python, JavaScript, and TypeScript according to file extension."""
+    """Universal parser dispatch: parses Python, JS/TS, Go, and Rust according to file extension."""
     ext = Path(file_path).suffix.lower()
     if ext in (".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"):
         return parse_js_ts_file(file_path, code_str)
+    elif ext == ".go":
+        return parse_go_file(file_path, code_str)
+    elif ext == ".rs":
+        return parse_rust_file(file_path, code_str)
     return parse_python_file(file_path, code_str)

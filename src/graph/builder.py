@@ -5,11 +5,11 @@ Runs in-memory on Host CPU and RAM in milliseconds.
 
 import os
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import networkx as nx
 from src.graph.parser import parse_file, parse_python_file, ParsedFile
 
-SUPPORTED_EXTENSIONS = (".py", ".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx")
+SUPPORTED_EXTENSIONS = (".py", ".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".go", ".rs")
 
 
 class RepoGraphBuilder:
@@ -19,13 +19,13 @@ class RepoGraphBuilder:
         self.symbol_table: Dict[str, str] = {}  # short_symbol -> qualified_node_id
 
     def build(self) -> nx.DiGraph:
-        """Walks the repository, parses Python, JS, and TS files, and creates graph nodes and edges."""
+        """Walks the repository, parses Python, JS, TS, Go, and Rust files, and creates graph nodes and edges."""
         parsed_files: List[ParsedFile] = []
 
         # 1. Collect and parse all source files
         for root, dirs, files in os.walk(self.repo_root):
-            # Exclude virtual environments, git, tests/caches, node_modules
-            dirs[:] = [d for d in dirs if not d.startswith(".") and d not in ("venv", ".venv", "__pycache__", "build", "dist", "node_modules")]
+            # Exclude virtual environments, git, tests/caches, node_modules, target, vendor
+            dirs[:] = [d for d in dirs if not d.startswith(".") and d not in ("venv", ".venv", "__pycache__", "build", "dist", "node_modules", "target", "vendor")]
             for file in files:
                 if file.endswith(SUPPORTED_EXTENSIONS):
                     full_path = os.path.join(root, file)
@@ -124,3 +124,138 @@ class RepoGraphBuilder:
                         self.graph.add_edge(node_id, target_id, relation="calls")
 
         return self.graph
+
+    def trace_path(self, from_symbol: str, to_symbol: str) -> Dict[str, Any]:
+        """
+        Finds the shortest execution call path connecting from_symbol to to_symbol in the CPG.
+        """
+        if not self.graph.nodes:
+            self.build()
+
+        def resolve_node(sym: str) -> Optional[str]:
+            if sym in self.graph:
+                return sym
+            if sym in self.symbol_table:
+                return self.symbol_table[sym]
+            short = sym.split(".")[-1]
+            if short in self.symbol_table:
+                return self.symbol_table[short]
+            sym_lower = sym.lower()
+            for n in self.graph.nodes:
+                if sym_lower in str(n).lower() and self.graph.nodes[n].get("type") in ("function", "method"):
+                    return n
+            return None
+
+        src_node = resolve_node(from_symbol)
+        dst_node = resolve_node(to_symbol)
+
+        if not src_node:
+            return {
+                "path_found": False,
+                "error": f"Source symbol '{from_symbol}' could not be resolved in the repository graph."
+            }
+        if not dst_node:
+            return {
+                "path_found": False,
+                "error": f"Destination symbol '{to_symbol}' could not be resolved in the repository graph."
+            }
+
+        # Check call graph shortest path
+        try:
+            path_nodes = nx.shortest_path(self.graph, source=src_node, target=dst_node)
+            steps = []
+            for idx, n in enumerate(path_nodes):
+                data = self.graph.nodes[n]
+                steps.append({
+                    "step": idx + 1,
+                    "entity": n,
+                    "name": data.get("name", n),
+                    "type": data.get("type", "node"),
+                    "file": data.get("file", data.get("path", "unknown")),
+                    "lines": f"{data.get('start_line', '?')}-{data.get('end_line', '?')}"
+                })
+            return {
+                "path_found": True,
+                "hops": len(path_nodes) - 1,
+                "from_symbol": from_symbol,
+                "to_symbol": to_symbol,
+                "call_chain": steps
+            }
+        except nx.NetworkXNoPath:
+            # Undirected fallback / reachable neighbors
+            undirected = self.graph.to_undirected()
+            try:
+                path_nodes = nx.shortest_path(undirected, source=src_node, target=dst_node)
+                steps = []
+                for idx, n in enumerate(path_nodes):
+                    data = self.graph.nodes[n]
+                    steps.append({
+                        "step": idx + 1,
+                        "entity": n,
+                        "name": data.get("name", n),
+                        "type": data.get("type", "node"),
+                        "file": data.get("file", data.get("path", "unknown")),
+                        "lines": f"{data.get('start_line', '?')}-{data.get('end_line', '?')}"
+                    })
+                return {
+                    "path_found": True,
+                    "path_type": "undirected_dependency",
+                    "hops": len(path_nodes) - 1,
+                    "from_symbol": from_symbol,
+                    "to_symbol": to_symbol,
+                    "call_chain": steps
+                }
+            except nx.NetworkXNoPath:
+                return {
+                    "path_found": False,
+                    "from_symbol": from_symbol,
+                    "to_symbol": to_symbol,
+                    "error": f"No execution or dependency path exists between '{from_symbol}' and '{to_symbol}'."
+                }
+
+    def generate_mermaid_map(self) -> str:
+        """
+        Generates a clean, aggregated Mermaid.js architecture flowchart of modules and call dependencies.
+        """
+        if not self.graph.nodes:
+            self.build()
+
+        modules: Dict[str, List[str]] = {}
+        for node, data in self.graph.nodes(data=True):
+            if data.get("type") in ("function", "method", "class"):
+                f = data.get("file", "")
+                if f:
+                    mod = Path(f).parent.as_posix()
+                    if mod == ".":
+                        mod = "root"
+                    modules.setdefault(mod, []).append(node)
+
+        lines = ["flowchart TD"]
+        # Add subgraphs for top modules (max 8 modules)
+        safe_names = {}
+        for idx, (mod, nodes) in enumerate(list(modules.items())[:8]):
+            safe_id = f"mod_{idx}"
+            safe_names[mod] = safe_id
+            lines.append(f"    subgraph {safe_id}[\"{mod}\"]")
+            # List up to 4 key entities
+            for n in nodes[:4]:
+                name = self.graph.nodes[n].get("name", n)
+                node_clean = n.replace(":", "_").replace("/", "_").replace(".", "_")
+                lines.append(f"        {node_clean}[\"{name}\"]")
+            lines.append("    end")
+
+        # Inter-module and inter-node call edges
+        added_edges = set()
+        for u, v, data in self.graph.edges(data=True):
+            if data.get("relation") == "calls":
+                u_data = self.graph.nodes.get(u, {})
+                v_data = self.graph.nodes.get(v, {})
+                u_mod = Path(u_data.get("file", "")).parent.as_posix()
+                v_mod = Path(v_data.get("file", "")).parent.as_posix()
+                if u_mod != v_mod and u_mod in safe_names and v_mod in safe_names:
+                    edge = (safe_names[u_mod], safe_names[v_mod])
+                    if edge not in added_edges:
+                        added_edges.add(edge)
+                        lines.append(f"    {edge[0]} --> {edge[1]}")
+
+        return "\n".join(lines)
