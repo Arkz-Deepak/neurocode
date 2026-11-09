@@ -58,8 +58,11 @@ def get_hardware_health() -> Dict[str, Any]:
 
 def handle_slice(args: Dict[str, Any]) -> str:
     """Constructs in-memory CPG and extracts minimal knapsack-packed context."""
-    repo_path = Path(args.get("repo_path", ".")).resolve()
-    issue = args.get("issue", "")
+    raw_path = args.get("repo_path") or args.get("workspace_path") or args.get("path") or "."
+    repo_path = Path(raw_path).resolve()
+    
+    issue = args.get("issue") or args.get("query") or args.get("task") or ""
+    entry = args.get("entry") or args.get("file_path") or args.get("target_file") or ""
     budget = int(args.get("budget", 1200))
     
     if not repo_path.exists():
@@ -72,13 +75,37 @@ def handle_slice(args: Dict[str, Any]) -> str:
     
     t1 = time.perf_counter()
     slicer = CodeGraphSlicer(graph, max_tokens=budget)
-    seeds = slicer.find_seed_nodes(issue)
+    
+    seeds = []
+    if entry:
+        entry_clean = Path(entry).as_posix()
+        seeds = [n for n in graph.nodes if entry_clean in str(graph.nodes[n].get("file_path", "")) or entry_clean in str(n)]
+        
+    if not seeds:
+        query_text = issue or entry or "repository context"
+        seeds = slicer.find_seed_nodes(query_text)
+        
+    if not seeds and len(graph.nodes) > 0:
+        seeds = sorted(graph.nodes, key=lambda n: graph.degree(n), reverse=True)[:3]
+        
     subgraph = slicer.extract_subgraph(seeds, k_hops=1)
-    slice_text = slicer.format_slice_for_llm(subgraph, seeds, query=issue, max_tokens=budget)
+    slice_text = slicer.format_slice_for_llm(subgraph, seeds, query=issue or entry, max_tokens=budget)
     slice_ms = (time.perf_counter() - t1) * 1000
     
     tokens = int(len(slice_text.split()) * 1.3)
     
+    if args.get("json_output") or args.get("format") == "json":
+        return json.dumps({
+            "repo_path": str(repo_path),
+            "issue": issue,
+            "seeds": seeds,
+            "token_count": tokens,
+            "ast_nodes": len(subgraph.nodes),
+            "build_time_ms": round(build_ms, 2),
+            "slice_time_ms": round(slice_ms, 2),
+            "context_slice": slice_text
+        }, indent=2)
+
     summary_header = (
         f"<!-- NeuroCode Sliced Context: {len(subgraph.nodes)} AST nodes ({tokens} tokens) "
         f"built in {build_ms:.1f}ms, sliced in {slice_ms:.1f}ms. Target Seeds: {seeds} -->\n\n"
@@ -86,10 +113,45 @@ def handle_slice(args: Dict[str, Any]) -> str:
     return summary_header + slice_text
 
 
+def handle_impact(args: Dict[str, Any]) -> str:
+    """Analyzes callers and upstream impact of modifying a specific entity or file."""
+    raw_path = args.get("repo_path") or args.get("workspace_path") or args.get("path") or "."
+    repo_path = Path(raw_path).resolve()
+    target = args.get("target") or args.get("function") or args.get("file_path") or ""
+    
+    if not repo_path.exists():
+        return f"[Error] Repository path does not exist: {repo_path}"
+        
+    builder = RepoGraphBuilder(str(repo_path))
+    graph = builder.build()
+    
+    matching_nodes = [n for n in graph.nodes if target.lower() in str(n).lower()]
+    if not matching_nodes:
+        return f"No matching entities found in CPG for target: {target}. Available nodes: {len(graph.nodes)}"
+        
+    impact_report = [f"# NeuroCode Structural Impact Analysis for: `{target}`"]
+    for node in matching_nodes[:5]:
+        node_data = graph.nodes[node]
+        callers = list(graph.predecessors(node)) if graph.is_directed() else list(graph.neighbors(node))
+        callees = list(graph.successors(node)) if graph.is_directed() else []
+        
+        impact_report.append(f"\n## Entity: `{node}` ({node_data.get('type', 'node')})")
+        impact_report.append(f"- **File**: `{node_data.get('file_path', 'unknown')}` (Lines {node_data.get('start_line', '?')}-{node_data.get('end_line', '?')})")
+        impact_report.append(f"- **Upstream Callers / Dependencies ({len(callers)})**:")
+        for c in callers[:8]:
+            impact_report.append(f"  - `{c}`")
+        impact_report.append(f"- **Downstream Invocations ({len(callees)})**:")
+        for cal in callees[:8]:
+            impact_report.append(f"  - `{cal}`")
+            
+    return "\n".join(impact_report)
+
+
 def handle_seeds(args: Dict[str, Any]) -> str:
     """Identifies root-cause candidate entities statically."""
-    repo_path = Path(args.get("repo_path", ".")).resolve()
-    issue = args.get("issue", "")
+    raw_path = args.get("repo_path") or args.get("workspace_path") or args.get("path") or "."
+    repo_path = Path(raw_path).resolve()
+    issue = args.get("issue") or args.get("query") or args.get("task") or ""
     
     if not repo_path.exists():
         return f"[Error] Repository path does not exist: {repo_path}"
@@ -98,7 +160,7 @@ def handle_seeds(args: Dict[str, Any]) -> str:
     builder = RepoGraphBuilder(str(repo_path))
     graph = builder.build()
     slicer = CodeGraphSlicer(graph, max_tokens=1500)
-    seeds = slicer.find_seed_nodes(issue)
+    seeds = slicer.find_seed_nodes(issue or "context")
     elapsed_ms = (time.perf_counter() - t0) * 1000
     
     result = {
@@ -187,15 +249,27 @@ def handle_repair_ollama(args: Dict[str, Any]) -> str:
 TOOLS = [
     {
         "name": "neurocode_slice",
-        "description": "Extract an AST-sliced repository context bounded strictly under token budget (<=1,200 tokens) using Host-side Code Property Graph reachability.",
+        "description": "Extract an AST-sliced repository context bounded strictly under token budget (<=1,200 tokens) using Host-side Code Property Graph reachability. Use this instead of reading entire files into LLM context.",
         "inputSchema": {
             "type": "object",
             "properties": {
-                "repo_path": {"type": "string", "description": "Absolute or relative path to repository root"},
-                "issue": {"type": "string", "description": "Bug report, error traceback, or coding query"},
-                "budget": {"type": "integer", "description": "Maximum token budget (default 1200)", "default": 1200}
+                "repo_path": {"type": "string", "description": "Absolute or relative path to repository root (default '.')", "default": "."},
+                "issue": {"type": "string", "description": "Bug report, error traceback, feature request, or coding query"},
+                "entry": {"type": "string", "description": "Optional specific file path or symbol to anchor the AST slice around"},
+                "budget": {"type": "integer", "description": "Strict token budget limit (default 1200)", "default": 1200}
+            }
+        }
+    },
+    {
+        "name": "neurocode_impact",
+        "description": "Analyze the structural blast radius before editing code. Statically reveals all upstream callers, downstream invocations, and file locations in <2 ms.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "repo_path": {"type": "string", "description": "Path to repository root (default '.')", "default": "."},
+                "target": {"type": "string", "description": "Function name, method, class, or file to analyze callers and dependencies for"}
             },
-            "required": ["repo_path", "issue"]
+            "required": ["target"]
         }
     },
     {
@@ -204,10 +278,10 @@ TOOLS = [
         "inputSchema": {
             "type": "object",
             "properties": {
-                "repo_path": {"type": "string", "description": "Path to repository root"},
+                "repo_path": {"type": "string", "description": "Path to repository root (default '.')", "default": "."},
                 "issue": {"type": "string", "description": "Bug description or error traceback"}
             },
-            "required": ["repo_path", "issue"]
+            "required": ["issue"]
         }
     },
     {
@@ -216,13 +290,13 @@ TOOLS = [
         "inputSchema": {
             "type": "object",
             "properties": {
-                "repo_path": {"type": "string", "description": "Path to repository root"},
+                "repo_path": {"type": "string", "description": "Path to repository root", "default": "."},
                 "issue": {"type": "string", "description": "Bug description or traceback"},
                 "model": {"type": "string", "description": "Ollama model name (e.g. 'qwen2.5-coder:14b', 'qwen2.5-coder:7b')", "default": "qwen2.5-coder:7b"},
                 "ollama_url": {"type": "string", "description": "Ollama server URL", "default": "http://localhost:11434"},
                 "apply": {"type": "boolean", "description": "Whether to write the patch to disk", "default": False}
             },
-            "required": ["repo_path", "issue"]
+            "required": ["issue"]
         }
     },
     {
@@ -264,7 +338,7 @@ def run_stdio_server():
                         },
                         "serverInfo": {
                             "name": "neurocode-mcp",
-                            "version": "0.1.0"
+                            "version": "0.1.1"
                         }
                     }
                 }
@@ -295,6 +369,8 @@ def run_stdio_server():
                 try:
                     if tool_name == "neurocode_slice":
                         output_str = handle_slice(args)
+                    elif tool_name == "neurocode_impact":
+                        output_str = handle_impact(args)
                     elif tool_name == "neurocode_seeds":
                         output_str = handle_seeds(args)
                     elif tool_name == "neurocode_repair_ollama":

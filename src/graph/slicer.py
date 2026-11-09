@@ -148,6 +148,8 @@ class CodeGraphSlicer:
             # Decision logic based on remaining token budget
             if node_type == "file":
                 continue
+            if not code.strip() and not doc.strip():
+                continue
 
             if (current_token_count + full_code_tokens <= effective_max_tokens) and (node in primary_seeds or full_code_tokens < 350):
                 # Tier 1: Full implementation
