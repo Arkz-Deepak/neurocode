@@ -1,7 +1,7 @@
 """Tests for NeuroCode MCP Server tools and JSON-RPC dispatch."""
 import json
 import pytest
-from src.mcp_server import handle_slice, handle_impact, handle_seeds, handle_symbol, handle_validate_patch, TOOLS
+from src.mcp_server import handle_slice, handle_impact, handle_seeds, handle_symbol, handle_validate_patch, handle_graft, TOOLS
 
 
 def test_mcp_tools_list_schema():
@@ -11,6 +11,7 @@ def test_mcp_tools_list_schema():
     assert "neurocode_seeds" in tool_names
     assert "neurocode_symbol" in tool_names
     assert "neurocode_validate_patch" in tool_names
+    assert "neurocode_graft" in tool_names
     assert "neurocode_repair_ollama" in tool_names
     assert "neurocode_hardware_health" in tool_names
 
@@ -51,3 +52,22 @@ def test_mcp_handle_seeds():
     data = json.loads(res_str)
     assert "identified_seeds" in data
     assert "analysis_latency_ms" in data
+
+
+def test_mcp_handle_graft(tmp_path):
+    py_code = "def greet(name: str) -> str:\n    return 'Hello ' + name\n"
+    f = tmp_path / "greeting.py"
+    f.write_text(py_code, encoding="utf-8")
+
+    res_str = handle_graft({
+        "repo_path": str(tmp_path),
+        "file_path": "greeting.py",
+        "symbol": "greet",
+        "replacement_code": "def greet(name: str) -> str:\n    return f'Welcome, {name}!'",
+        "apply": True
+    })
+    data = json.loads(res_str)
+    assert data["success"] is True
+    assert data["syntax_valid"] is True
+    assert data["applied"] is True
+    assert "Welcome" in f.read_text(encoding="utf-8")

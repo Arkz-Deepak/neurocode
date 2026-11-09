@@ -301,6 +301,31 @@ def handle_validate_patch(args: Dict[str, Any]) -> str:
     }, indent=2)
 
 
+def handle_graft(args: Dict[str, Any]) -> str:
+    """Performs deterministic AST subtree grafting for a target symbol."""
+    from src.agent.graft import graft_symbol
+    raw_path = args.get("repo_path") or args.get("workspace_path") or args.get("path") or "."
+    file_path = args.get("file_path") or args.get("file") or args.get("target_file") or ""
+    symbol = args.get("symbol") or args.get("target_symbol") or args.get("name") or ""
+    replacement = args.get("replacement_code") or args.get("code") or args.get("replacement") or ""
+    apply = bool(args.get("apply", False))
+
+    if not file_path or not symbol or not replacement:
+        return json.dumps({
+            "success": False,
+            "error": "Missing required arguments: file_path, symbol, and replacement_code must be provided."
+        }, indent=2)
+
+    res = graft_symbol(
+        repo_path=str(raw_path),
+        file_path=file_path,
+        symbol=symbol,
+        replacement_code=replacement,
+        apply=apply
+    )
+    return json.dumps(res, indent=2)
+
+
 def handle_repair_ollama(args: Dict[str, Any]) -> str:
     """Generates patch using local Ollama instance with zero cloud dependencies."""
     repo_path = Path(args.get("repo_path", ".")).resolve()
@@ -439,6 +464,21 @@ TOOLS = [
         }
     },
     {
+        "name": "neurocode_graft",
+        "description": "Perform deterministic AST subtree grafting on Python, TypeScript, or JavaScript code. Directly mutates/replaces a specific function, class, or method AST node without fragile whitespace/SEARCH/REPLACE diff errors. Enforces 100% syntax validity before applying changes.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "repo_path": {"type": "string", "description": "Path to repository root (default '.')", "default": "."},
+                "file_path": {"type": "string", "description": "Relative path to file being modified"},
+                "symbol": {"type": "string", "description": "Function, method (e.g. 'ClassName.methodName'), or class to replace"},
+                "replacement_code": {"type": "string", "description": "New code block to graft into the AST"},
+                "apply": {"type": "boolean", "description": "Whether to write modifications to disk (default false for preview)", "default": False}
+            },
+            "required": ["file_path", "symbol", "replacement_code"]
+        }
+    },
+    {
         "name": "neurocode_repair_ollama",
         "description": "Perform single-turn bug repair by sending a knapsack-sliced prompt to a local Ollama model instance.",
         "inputSchema": {
@@ -492,7 +532,7 @@ def run_stdio_server():
                         },
                         "serverInfo": {
                             "name": "neurocode-mcp",
-                            "version": "0.1.1"
+                            "version": "1.2.0"
                         }
                     }
                 }
@@ -531,6 +571,8 @@ def run_stdio_server():
                         output_str = handle_symbol(args)
                     elif tool_name == "neurocode_validate_patch":
                         output_str = handle_validate_patch(args)
+                    elif tool_name == "neurocode_graft":
+                        output_str = handle_graft(args)
                     elif tool_name == "neurocode_repair_ollama":
                         output_str = handle_repair_ollama(args)
                     elif tool_name == "neurocode_hardware_health":

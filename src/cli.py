@@ -334,7 +334,25 @@ def cmd_agent_setup(args):
     print("  • Query CPG AST slices in <2 ms without token bloat.")
     print("  • Look up symbols and callers instantly.")
     print("  • Pre-validate code patches before modifying disk.")
+    print("  • Deterministically graft AST subtrees without whitespace errors.")
     print("==========================================================================\n")
+
+
+def cmd_graft(args):
+    from src.agent.graft import graft_symbol
+    file_path = args.file
+    symbol = args.symbol
+    replacement = args.code
+    apply = args.apply
+    res = graft_symbol(".", file_path, symbol, replacement, apply=apply)
+    if res.get("success"):
+        print(f"[✓] AST Graft successful for symbol '{symbol}' in {file_path}")
+        print(f"    Syntax Verified: {res['syntax_valid']}")
+        print(f"    Applied to disk: {res['applied']}")
+        if res.get("diff"):
+            print("\n" + res["diff"])
+    else:
+        print(f"[✗] AST Graft failed: {res.get('error')}")
 
 
 def main():
@@ -350,6 +368,13 @@ def main():
     # Command: agent-setup
     setup_parser = subparsers.add_parser("agent-setup", help="Auto-configure repository for AI agents (Cursor, Claude, Continue MCP)")
     setup_parser.add_argument("--repo", type=str, default=".", help="Path to repository directory (default '.')")
+
+    # Command: graft
+    graft_parser = subparsers.add_parser("graft", help="Deterministically graft/mutate an AST symbol without whitespace diff failures")
+    graft_parser.add_argument("file", type=str, help="Target file path (Python, JS, TS)")
+    graft_parser.add_argument("--symbol", type=str, required=True, help="Function, method, or class name to replace")
+    graft_parser.add_argument("--code", type=str, required=True, help="New code block to graft into the AST")
+    graft_parser.add_argument("--apply", action="store_true", help="Apply graft directly to source file on disk")
 
     # Command: slice
     slice_parser = subparsers.add_parser("slice", help="Construct CPG and extract minimal token-budgeted slice")
@@ -383,6 +408,8 @@ def main():
         get_hardware_info()
     elif args.command == "agent-setup":
         cmd_agent_setup(args)
+    elif args.command == "graft":
+        cmd_graft(args)
     elif args.command == "mcp":
         from src.mcp_server import main as run_mcp
         run_mcp()

@@ -7,7 +7,9 @@ import os
 from pathlib import Path
 from typing import Dict, List, Optional
 import networkx as nx
-from src.graph.parser import parse_python_file, ParsedFile
+from src.graph.parser import parse_file, parse_python_file, ParsedFile
+
+SUPPORTED_EXTENSIONS = (".py", ".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx")
 
 
 class RepoGraphBuilder:
@@ -17,19 +19,19 @@ class RepoGraphBuilder:
         self.symbol_table: Dict[str, str] = {}  # short_symbol -> qualified_node_id
 
     def build(self) -> nx.DiGraph:
-        """Walks the repository, parses Python files, and creates graph nodes and edges."""
+        """Walks the repository, parses Python, JS, and TS files, and creates graph nodes and edges."""
         parsed_files: List[ParsedFile] = []
 
-        # 1. Collect and parse all Python files
+        # 1. Collect and parse all source files
         for root, dirs, files in os.walk(self.repo_root):
-            # Exclude virtual environments, git, tests/caches
-            dirs[:] = [d for d in dirs if not d.startswith(".") and d not in ("venv", ".venv", "__pycache__", "build", "dist")]
+            # Exclude virtual environments, git, tests/caches, node_modules
+            dirs[:] = [d for d in dirs if not d.startswith(".") and d not in ("venv", ".venv", "__pycache__", "build", "dist", "node_modules")]
             for file in files:
-                if file.endswith(".py"):
+                if file.endswith(SUPPORTED_EXTENSIONS):
                     full_path = os.path.join(root, file)
                     rel_path = os.path.relpath(full_path, self.repo_root)
                     try:
-                        parsed = parse_python_file(full_path)
+                        parsed = parse_file(full_path)
                         parsed.file_path = rel_path
                         parsed_files.append(parsed)
                     except Exception as e:
