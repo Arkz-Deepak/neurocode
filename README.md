@@ -12,7 +12,7 @@
 **NeuroCode** is a lightweight, heterogeneous neuro-symbolic framework and **Model Context Protocol (MCP)** server that enables small, local language models (1.5B–14B parameters) to fix multi-file software engineering bugs on consumer laptops (e.g., 4GB–8GB VRAM) without cloud API dependency or Out-of-Memory (OOM) crashes.
 
 > 📌 **Academic Reproducibility Notice**:  
-> For benchmark reproduction and evaluation datasets corresponding to the **35th IEEE/ACM ICPC 2027 (Submission #63)** and the **Elsevier Journal of Systems and Software (`JSSOFTWARE-S-26-03997`)**, please refer to frozen release tag [`v0.1.1`](https://github.com/Arkz-Deepak/neurocode/releases/tag/v0.1.1). The `master` branch represents the actively maintained multi-language production release.
+> For benchmark reproduction and evaluation datasets corresponding to the **35th IEEE/ACM ICPC 2027 (Submission #63)** and the **Elsevier Journal of Parallel and Distributed Computing (JPDC)**, please refer to frozen release tag [`v0.1.1`](https://github.com/Arkz-Deepak/neurocode/releases/tag/v0.1.1). The `master` branch represents the actively maintained multi-language production release.
 
 ---
 
@@ -193,9 +193,10 @@ neurocode-copilot
   - *Track*: Tool Demonstration Track (Submission #63)
   - *Title*: *NeuroCode: In-Memory Code Property Graph Slicing and Edge SWE Agent for Resource-Constrained Environments*
   - *Source*: [`paper_icpc_tool_demo/neurocode_icpc_demo.tex`](paper_icpc_tool_demo/neurocode_icpc_demo.tex)
-- **Journal of Systems and Software (Elsevier)**:
+- **Journal of Parallel and Distributed Computing (Elsevier, JPDC)**:
   - *Track*: Full Research Article (Traditional Subscription, ₹0 APC)
   - *Title*: *On-Device Autonomous Software Engineering: In-Memory Code Property Graph Reachability Slicing under Edge VRAM Constraints*
+  - *Status*: Transferred & Under Review (Scopus Q1)
   - *Source*: [`paper_elsevier_jss/neurocode_jss.tex`](paper_elsevier_jss/neurocode_jss.tex)
 - **Kaggle Empirical Reproduction**: [Kaggle Notebook Live](https://www.kaggle.com/code/deepark121/neurocode-heterogeneous-graph-sliced-swe-agent)
 
