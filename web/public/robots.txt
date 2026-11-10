@@ -1,0 +1,20 @@
+# Allow all search crawlers and AI agent scrapers
+User-agent: *
+Allow: /
+Allow: /llms.txt
+Allow: /downloads/
+
+# AI-specific agent crawlers
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+Sitemap: https://neurocode.deepak-arkz.me/sitemap.xml
