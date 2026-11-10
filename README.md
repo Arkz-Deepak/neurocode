@@ -5,6 +5,7 @@
 [![Glama MCP Server](https://glama.ai/mcp/servers/Arkz-Deepak/neurocode/badge)](https://glama.ai/mcp/servers/Arkz-Deepak/neurocode)
 [![Awesome MCP Servers](https://img.shields.io/badge/Awesome--MCP--Servers-Listed-green.svg)](https://github.com/punkpeye/awesome-mcp-servers)
 [![ICPC 2027](https://img.shields.io/badge/ICPC%202027-Submission%20%2363-purple.svg)](https://conf.researchr.org/home/icpc-2027)
+[![Elsevier JPDC](https://img.shields.io/badge/Elsevier%20JPDC-Under%20Review%20(JPDC--S--26--02633)-orange.svg)](https://www.sciencedirect.com/journal/journal-of-parallel-and-distributed-computing)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Hardware: 4GB GPU](https://img.shields.io/badge/Hardware-4GB%20VRAM%20Verified-brightgreen.svg)]()
