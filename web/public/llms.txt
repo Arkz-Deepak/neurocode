@@ -1,0 +1,25 @@
+# NeuroCode AI
+> On-Device Autonomous Software Engineering: In-Memory Code Property Graph Reachability Slicing under Edge VRAM Constraints.
+
+## Overview
+NeuroCode offloads codebase structural analysis to Host CPU/DRAM using Tree-sitter and in-memory Code Property Multigraphs (CPG). It extracts bidirectional reachability closures in 0.62 ms, strictly bounding context to < 1,500 tokens (97.1% token cut) for on-device LLMs (1.5B–14B parameters) running under edge VRAM constraints (< 8 GB VRAM).
+
+## Tools & API Endpoints for AI Agents
+- **POST /api/slice**: Returns bounded AST knapsack slice for an issue/bug report.
+  - Payload: `{"code": "<source code>", "query": "<issue description or symbol>", "budget": 1500}`
+  - Response: `{"tokens_original": 44687, "tokens_sliced": 1314, "reduction_pct": 97.1, "sliced_context": "..."}`
+- **POST /api/mcp**: Remote JSON-RPC 2.0 Model Context Protocol endpoint.
+  - Tools supported: `neurocode_slice`, `neurocode_trace`, `neurocode_map`, `neurocode_graft`.
+- **SSE /api/mcp/sse**: Streaming Model Context Protocol endpoint for Cursor and Claude Desktop.
+
+## Software Artifacts & Downloads
+- **PyPI Package**: `pip install neurocode-ai` (Version 1.3.0)
+- **VS Code Extension (Windows 1-Click .exe)**: `https://neurocode.deepak-arkz.me/downloads/NeuroCode-Setup.exe`
+- **VS Code Extension (.vsix)**: `https://neurocode.deepak-arkz.me/downloads/neurocode-ai-1.3.0.vsix`
+- **Install Script**: `curl -fsSL https://neurocode.deepak-arkz.me/downloads/install.sh | bash`
+
+## Publications & Grounding
+- **IEEE/ACM ICPC 2027**: 35th International Conference on Program Comprehension, Tool Demo Track (Dublin, May 2027, Submission #63).
+- **Elsevier JPDC**: Journal of Parallel and Distributed Computing (Ref: JPDC-S-26-02633).
+- **GitHub**: https://github.com/Arkz-Deepak/neurocode
+- **Author**: Deepak R., Dhaanish Ahmed College of Engineering, Anna University, Chennai, India.
