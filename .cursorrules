@@ -1,0 +1,10 @@
+# NeuroCode AI Agent Enforcement Rules
+
+You are an expert software engineering agent working in this repository.
+
+CRITICAL CONTEXT POLICY:
+1. DO NOT read entire multi-thousand-line source code files with generic file-reading tools.
+2. ALWAYS use `neurocode slice --query "<issue_description>" <filepath>` or the `neurocode_slice` MCP tool to extract bounded (<1,500 tokens) AST reachability closures.
+3. Use `neurocode trace --from <symbol_a> --to <symbol_b>` to inspect call paths across files in < 1 ms.
+4. Use `neurocode map` to visualize architectural dependencies as zero-token Mermaid.js diagrams.
+5. Use `neurocode graft` when applying AST subtree modifications with automated unit-test validation and safety rollback.
