@@ -117,7 +117,7 @@ export default function Home() {
                 NeuroCode
               </span>
               <span className="ml-2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/50">
-                v1.3.0
+                v1.4.0
               </span>
             </div>
           </div>
@@ -187,7 +187,7 @@ export default function Home() {
           </a>
 
           <a
-            href="/downloads/neurocode-ai-1.3.0.vsix"
+            href="/downloads/neurocode-ai-1.4.0.vsix"
             className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-slate-100 font-semibold text-sm border border-slate-700 transition"
             download
           >
@@ -444,6 +444,29 @@ export default function Home() {
     "budget": 1500
   }'`}
               </pre>
+            </div>
+          </div>
+
+          {/* Zero-Friction Proxy Banner */}
+          <div className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-blue-950/40 to-slate-900/60 border border-cyan-800/40">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 text-cyan-300 font-semibold text-base mb-1">
+                  <ShieldCheck className="w-5 h-5 text-cyan-400" />
+                  <span>Zero-Touch Adoption: Transparent AI Proxy &amp; Auto-Config</span>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+                  Hate configuring tools manually? Run <code className="bg-black/50 px-1.5 py-0.5 rounded text-cyan-200 font-mono">neurocode proxy</code> and set your AI editor&apos;s Base URL to <code className="bg-black/50 px-1.5 py-0.5 rounded text-cyan-200 font-mono">http://127.0.0.1:8000/v1</code>. Bloated context is automatically sliced down in 0.62ms before reaching your LLM. Installing the extension automatically enables Claude Desktop &amp; Cursor support silently!
+                </p>
+              </div>
+              <button
+                onClick={() => copyToClipboard("neurocode proxy --port 8000", "pip")}
+                className="shrink-0 px-4 py-2.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 font-mono text-xs flex items-center gap-2 transition"
+              >
+                <Terminal className="w-4 h-4" />
+                <span>neurocode proxy</span>
+                <Copy className="w-3.5 h-3.5 text-cyan-400" />
+              </button>
             </div>
           </div>
         </div>

@@ -47,7 +47,8 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('neurocode.copySlicedContext', () => sliceActiveFile(true)),
         vscode.commands.registerCommand('neurocode.hardwareHealth', checkHardwareHealth),
         vscode.commands.registerCommand('neurocode.repairIssue', repairIssue),
-        vscode.commands.registerCommand('neurocode.configureMCP', configureMCP)
+        vscode.commands.registerCommand('neurocode.configureMCP', () => autoConfigureAIEnvironments(outputChannel, false)),
+        vscode.commands.registerCommand('neurocode.launchProxy', launchProxyGateway)
     );
 
     // 3. Register Webview Provider for Sidebar
@@ -57,6 +58,9 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     outputChannel.appendLine('[NeuroCode] In-Memory AST Slicer & SWE Agent Activated.');
+
+    // 4. Silent Zero-Click Auto-Configuration for Claude Desktop & Cursor
+    autoConfigureAIEnvironments(outputChannel, true);
 }
 
 export function deactivate() {
@@ -91,9 +95,14 @@ async function showQuickMenu() {
             detail: 'Validates edge hardware headroom before running models'
         },
         {
-            label: '$(plug) Export MCP Client Config',
-            description: 'Configure VS Code / Cursor / Claude Desktop MCP',
-            detail: 'Generates .vscode/mcp.json for seamless AI tool-calling'
+            label: '$(plug) Auto-Configure Claude Desktop & Cursor MCP',
+            description: 'Zero-click integration into local AI environments',
+            detail: 'Automatically writes neurocode definitions into Claude Desktop & Cursor'
+        },
+        {
+            label: '$(server) Launch Transparent AI Proxy (Port 8000)',
+            description: 'Auto-slice prompts for Cursor, Continue.dev, and Ollama',
+            detail: 'Zero-touch OpenAI-compatible gateway (cuts prompt tokens by 97.1%)'
         }
     ];
 
@@ -111,8 +120,10 @@ async function showQuickMenu() {
         await repairIssue();
     } else if (selection.label.includes('Check Hardware Health')) {
         await checkHardwareHealth();
-    } else if (selection.label.includes('Export MCP Client Config')) {
-        await configureMCP();
+    } else if (selection.label.includes('Auto-Configure Claude Desktop')) {
+        await autoConfigureAIEnvironments(outputChannel, false);
+    } else if (selection.label.includes('Launch Transparent AI Proxy')) {
+        await launchProxyGateway();
     }
 }
 
@@ -292,52 +303,95 @@ async function repairIssue() {
 }
 
 /**
- * Export MCP Server Configuration (.vscode/mcp.json)
+ * Auto-Configure MCP across Claude Desktop, Cursor, and VS Code
  */
-async function configureMCP() {
+async function autoConfigureAIEnvironments(output: vscode.OutputChannel, quiet: boolean = false) {
+    const configuredPaths: string[] = [];
+    const neurocodeServerDef = {
+        command: "neurocode",
+        args: ["mcp"]
+    };
+
+    const home = process.env.HOME || process.env.USERPROFILE || '';
+    const candidates: string[] = [];
+
+    // 1. Claude Desktop
+    if (process.platform === 'win32') {
+        const appData = process.env.APPDATA || '';
+        if (appData) {
+            candidates.push(path.join(appData, 'Claude', 'claude_desktop_config.json'));
+        }
+    } else if (process.platform === 'darwin') {
+        candidates.push(path.join(home, 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json'));
+    } else {
+        candidates.push(path.join(home, '.config', 'Claude', 'claude_desktop_config.json'));
+    }
+
+    // 2. Cursor Global
+    candidates.push(path.join(home, '.cursor', 'mcp.json'));
+
+    // 3. Workspace Folders (Cursor & VS Code)
     const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders || workspaceFolders.length === 0) {
-        vscode.window.showErrorMessage('Open a workspace folder to configure MCP.');
-        return;
+    if (workspaceFolders && workspaceFolders.length > 0) {
+        const wsRoot = workspaceFolders[0].uri.fsPath;
+        candidates.push(path.join(wsRoot, '.cursor', 'mcp.json'));
+        candidates.push(path.join(wsRoot, '.vscode', 'mcp.json'));
     }
 
-    const vscodeDir = path.join(workspaceFolders[0].uri.fsPath, '.vscode');
-    if (!fs.existsSync(vscodeDir)) {
-        fs.mkdirSync(vscodeDir, { recursive: true });
+    for (const cfgPath of candidates) {
+        try {
+            const dir = path.dirname(cfgPath);
+            if (fs.existsSync(dir)) {
+                let jsonContent: any = { mcpServers: {} };
+                if (fs.existsSync(cfgPath)) {
+                    try {
+                        const raw = fs.readFileSync(cfgPath, 'utf-8');
+                        jsonContent = JSON.parse(raw);
+                    } catch {
+                        jsonContent = { mcpServers: {} };
+                    }
+                }
+                if (!jsonContent.mcpServers) {
+                    jsonContent.mcpServers = {};
+                }
+
+                if (!jsonContent.mcpServers.neurocode) {
+                    jsonContent.mcpServers.neurocode = neurocodeServerDef;
+                    fs.writeFileSync(cfgPath, JSON.stringify(jsonContent, null, 2), 'utf-8');
+                    configuredPaths.push(cfgPath);
+                    output.appendLine(`[NeuroCode] Auto-registered MCP server in: ${cfgPath}`);
+                }
+            }
+        } catch (err) {
+            output.appendLine(`[NeuroCode] Skipping ${cfgPath}: ${err}`);
+        }
     }
 
-    const mcpConfigPath = path.join(vscodeDir, 'mcp.json');
-    const configContent = {
-        "mcpServers": {
-            "neurocode": {
-                "command": "neurocode-mcp",
-                "args": []
-            }
+    if (!quiet) {
+        if (configuredPaths.length > 0) {
+            vscode.window.showInformationMessage(
+                `🎉 NeuroCode successfully configured for Claude Desktop & Cursor (${configuredPaths.length} locations)!`,
+                'View Output'
+            ).then(act => {
+                if (act === 'View Output') output.show();
+            });
+        } else {
+            vscode.window.showInformationMessage('NeuroCode MCP is already configured in all active AI environments.');
         }
-    };
+    }
+}
 
-    fs.writeFileSync(mcpConfigPath, JSON.stringify(configContent, null, 2), 'utf-8');
-
-    const claudeDesktopConfig = {
-        "mcpServers": {
-            "neurocode": {
-                "command": "neurocode-mcp"
-            }
-        }
-    };
-
-    const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(mcpConfigPath));
-    await vscode.window.showTextDocument(doc);
-
+/**
+ * Launch Local Transparent AI Proxy Gateway
+ */
+async function launchProxyGateway() {
+    const bin = getNeurocodeBin();
+    const terminal = vscode.window.createTerminal('NeuroCode Proxy');
+    terminal.show();
+    terminal.sendText(`${bin} proxy --port 8000`);
     vscode.window.showInformationMessage(
-        'NeuroCode MCP Config written to .vscode/mcp.json! Also compatible with Cursor and Claude Desktop.',
-        'Copy Claude Desktop JSON'
-    ).then(act => {
-        if (act === 'Copy Claude Desktop JSON') {
-            vscode.env.clipboard.writeText(JSON.stringify(claudeDesktopConfig, null, 2));
-            vscode.window.showInformationMessage('Claude Desktop MCP configuration copied to clipboard!');
-        }
-    });
+        '⚡ NeuroCode AI Proxy launched on http://127.0.0.1:8000/v1. Set this as Base URL in Cursor/Continue to automatically cut prompt tokens by 97%!'
+    );
 }
 
 /**

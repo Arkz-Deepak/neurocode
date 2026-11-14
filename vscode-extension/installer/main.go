@@ -10,7 +10,7 @@ import (
 	"unsafe"
 )
 
-//go:embed neurocode-ai-1.3.0.vsix
+//go:embed neurocode-ai-1.4.0.vsix
 var embeddedVsix []byte
 
 func showMsg(title, msg string, isError bool) {
@@ -66,7 +66,7 @@ func main() {
 
 	// Write embedded vsix to temp file
 	tempDir := os.TempDir()
-	tempVsix := filepath.Join(tempDir, "neurocode-ai-1.3.0.vsix")
+	tempVsix := filepath.Join(tempDir, "neurocode-ai-1.4.0.vsix")
 	err := os.WriteFile(tempVsix, embeddedVsix, 0644)
 	if err != nil {
 		showMsg("NeuroCode AI Setup Error", fmt.Sprintf("Failed to prepare installation package:\n%v", err), true)

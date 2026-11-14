@@ -338,6 +338,16 @@ def cmd_agent_setup(args):
     print("==========================================================================\n")
 
 
+def cmd_proxy(args):
+    from src.proxy import run_proxy
+    run_proxy(
+        port=args.port,
+        upstream=args.upstream,
+        budget=args.budget,
+        repo=args.repo
+    )
+
+
 def cmd_graft(args):
     from src.agent.graft import graft_symbol
     file_path = args.file
@@ -441,6 +451,13 @@ def main():
     slice_parser.add_argument("--budget", type=int, default=1200, help="Maximum token budget for prompt")
     slice_parser.add_argument("--output", type=str, default=None, help="Save sliced Markdown prompt to file")
 
+    # Command: proxy
+    proxy_parser = subparsers.add_parser("proxy", help="Launch transparent OpenAI-compatible proxy gateway with auto-slicing")
+    proxy_parser.add_argument("--port", "-p", type=int, default=8000, help="Port to listen on (default 8000)")
+    proxy_parser.add_argument("--upstream", "-u", type=str, default="http://localhost:11434/v1", help="Upstream LLM API endpoint (Ollama / OpenAI / vLLM)")
+    proxy_parser.add_argument("--budget", "-b", type=int, default=1500, help="Maximum token budget for prompt slicing (default 1500)")
+    proxy_parser.add_argument("--repo", type=str, default=".", help="Target repository directory (default '.')")
+
     # Command: mcp
     subparsers.add_parser("mcp", help="Start the Model Context Protocol (MCP) stdio server for Claude Desktop / Cursor / Continue")
 
@@ -470,6 +487,8 @@ def main():
         cmd_trace(args)
     elif args.command == "map":
         cmd_map(args)
+    elif args.command == "proxy":
+        cmd_proxy(args)
     elif args.command == "mcp":
         from src.mcp_server import main as run_mcp
         run_mcp()
