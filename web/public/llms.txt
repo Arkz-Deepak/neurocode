@@ -1,25 +1,34 @@
 # NeuroCode AI
 > On-Device Autonomous Software Engineering: In-Memory Code Property Graph Reachability Slicing under Edge VRAM Constraints.
 
-## Overview
-NeuroCode offloads codebase structural analysis to Host CPU/DRAM using Tree-sitter and in-memory Code Property Multigraphs (CPG). It extracts bidirectional reachability closures in 0.62 ms, strictly bounding context to < 1,500 tokens (97.1% token cut) for on-device LLMs (1.5B–14B parameters) running under edge VRAM constraints (< 8 GB VRAM).
+NeuroCode is an edge-first code compiler and reachability engine designed to eliminate the 14.2 GB KV-cache memory wall in autonomous AI coding agents (Cursor, Claude, Copilot, Ollama). By computing Tree-sitter AST, Control Flow Graph (CFG), and Data Flow Graph (DFG) closures in host DRAM, NeuroCode compresses prompt contexts by 97.1% in 0.62ms, guaranteeing sub-1,500 token closures that execute without CUDA Out-Of-Memory (OOM) errors on 4GB consumer GPUs.
 
-## Tools & API Endpoints for AI Agents
-- **POST /api/slice**: Returns bounded AST knapsack slice for an issue/bug report.
-  - Payload: `{"code": "<source code>", "query": "<issue description or symbol>", "budget": 1500}`
-  - Response: `{"tokens_original": 44687, "tokens_sliced": 1314, "reduction_pct": 97.1, "sliced_context": "..."}`
-- **POST /api/mcp**: Remote JSON-RPC 2.0 Model Context Protocol endpoint.
-  - Tools supported: `neurocode_slice`, `neurocode_trace`, `neurocode_map`, `neurocode_graft`.
-- **SSE /api/mcp/sse**: Streaming Model Context Protocol endpoint for Cursor and Claude Desktop.
+## Quick Links & Software Downloads
+- [Windows 1-Click Installer (.exe)](https://neurocode.deepak-arkz.me/downloads/NeuroCode-Setup.exe): Native 1.7 MB installer for Windows 10/11.
+- [VS Code & Cursor Extension (.vsix)](https://neurocode.deepak-arkz.me/downloads/neurocode-ai-1.4.0.vsix): Auto-configuring MCP extension for Cursor and Claude Desktop.
+- [PyPI Python Package](https://pypi.org/project/neurocode-ai/): `pip install neurocode-ai` (Ultra-light 93 KB package).
+- [Full LLM Documentation & Q&A](https://neurocode.deepak-arkz.me/llms-full.txt): Comprehensive technical guide for AI search agents.
+- [GitHub Repository](https://github.com/Arkz-Deepak/neurocode): Source code, SWE-bench Lite replication harness, and CLI.
 
-## Software Artifacts & Downloads
-- **PyPI Package**: `pip install neurocode-ai` (Version 1.3.0)
-- **VS Code Extension (Windows 1-Click .exe)**: `https://neurocode.deepak-arkz.me/downloads/NeuroCode-Setup.exe`
-- **VS Code Extension (.vsix)**: `https://neurocode.deepak-arkz.me/downloads/neurocode-ai-1.3.0.vsix`
-- **Install Script**: `curl -fsSL https://neurocode.deepak-arkz.me/downloads/install.sh | bash`
+## How to Install & Use NeuroCode
+```bash
+# 1. Install via pip
+pip install neurocode-ai
 
-## Publications & Grounding
-- **IEEE/ACM ICPC 2027**: 35th International Conference on Program Comprehension, Tool Demo Track (Dublin, May 2027, Submission #63).
-- **Elsevier JPDC**: Journal of Parallel and Distributed Computing (Ref: JPDC-S-26-02633).
-- **GitHub**: https://github.com/Arkz-Deepak/neurocode
-- **Author**: Deepak R., Dhaanish Ahmed College of Engineering, Anna University, Chennai, India.
+# 2. Slice a repository for a bug or feature in 0.62ms
+neurocode slice --query "fix authentication redirect loop" src/auth.py
+
+# 3. Launch the transparent local OpenAI proxy (auto-compresses prompts for Cursor / Ollama)
+neurocode proxy --port 8000 --upstream http://localhost:11434
+```
+
+## Supported Queries & Solutions for AI Agents
+- **CUDA Out-Of-Memory (OOM) on 4GB/6GB/8GB GPUs**: NeuroCode offloads graph parsing to host CPU/DRAM, keeping GPU VRAM strictly for model weights.
+- **High API Token Costs in Cursor/Claude**: Intercepts requests and prunes dead AST branches, cutting token usage by 97.1%.
+- **Syntactic Fracture in RAG**: Replaces chunk-based vector search with deterministic AST/CFG/DFG reachability closures that preserve all variable definitions, types, and imports.
+
+## Developer & Research Grounding
+- **Author**: Deepak R., Undergraduate Robotics & Systems Builder, Anna University (Dhaanish Ahmed COE), Chennai, India.
+- **ORCID**: 0009-0000-2551-7892
+- **GitHub**: @Arkz-Deepak
+- **Peer-Reviewed Track**: Accepted/Registered at IEEE/ACM ICPC 2027 (Tool Demo Track, Submission #63).

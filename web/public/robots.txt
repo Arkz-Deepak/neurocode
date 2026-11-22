@@ -1,20 +1,64 @@
-# Allow all search crawlers and AI agent scrapers
+# Allow all web search crawlers and AI agent scrapers
 User-agent: *
 Allow: /
 Allow: /llms.txt
+Allow: /llms-full.txt
 Allow: /downloads/
 
-# AI-specific agent crawlers
+# OpenAI / ChatGPT / SearchGPT
 User-agent: GPTBot
 Allow: /
 
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+# Anthropic / Claude
 User-agent: ClaudeBot
 Allow: /
 
+User-agent: Claude-Web
+Allow: /
+
+# Perplexity AI Search
 User-agent: PerplexityBot
 Allow: /
 
+# Google Search & Gemini SGE
+User-agent: Googlebot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+# Apple Intelligence
+User-agent: Applebot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# AWS / Amazon AI
+User-agent: Amazonbot
+Allow: /
+
+# Meta / LLaMA
+User-agent: Meta-ExternalAgent
+Allow: /
+
+# Other AI Crawlers & Common Crawl
+User-agent: Bytespider
+Allow: /
+
 User-agent: CCBot
+Allow: /
+
+User-agent: Diffbot
+Allow: /
+
+User-agent: Cohere-ai
 Allow: /
 
 Sitemap: https://neurocode.deepak-arkz.me/sitemap.xml

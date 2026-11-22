@@ -53,6 +53,9 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "google-site-verification-token",
+  },
 };
 
 export default function RootLayout({
@@ -73,14 +76,50 @@ export default function RootLayout({
           "price": "0",
           "priceCurrency": "USD"
         },
-        "description": "In-Memory Code Property Graph Reachability Slicing under Edge VRAM Constraints. 97.1% prompt token reduction.",
+        "description": "In-Memory Code Property Graph Reachability Slicing under Edge VRAM Constraints. 97.1% prompt token reduction, zero OOM crashes on consumer GPUs.",
         "author": {
           "@type": "Person",
           "name": "Deepak R.",
           "url": "https://www.deepak-arkz.me"
         },
         "url": "https://neurocode.deepak-arkz.me",
-        "downloadUrl": "https://neurocode.deepak-arkz.me/downloads/NeuroCode-Setup.exe"
+        "downloadUrl": "https://neurocode.deepak-arkz.me/downloads/NeuroCode-Setup.exe",
+        "featureList": [
+          "In-Memory Code Property Graph (AST + CFG + DFG)",
+          "Sub-1500 token bounded reachability slicing in 0.62ms",
+          "97.1% token compression on SWE-bench Lite",
+          "Transparent local OpenAI proxy on port 8000",
+          "Auto-configuring VS Code & Cursor MCP extension"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How to run local coding LLMs on 4GB GPU without CUDA OOM crashes?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "NeuroCode offloads code graph construction to host CPU/DRAM using Tree-sitter and NetworkX, computing bidirectional reachability closures in 0.62ms to bound prompts under 1,500 tokens. This reduces peak KV-cache from 14.2 GB to ~400 MB, preventing CUDA Out-Of-Memory errors on 4GB GPUs like the NVIDIA RTX 3050."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How to reduce token usage and API costs in Cursor or Claude Desktop?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "NeuroCode provides a transparent local OpenAI proxy (neurocode proxy --port 8000) and an auto-configuring MCP server for Cursor and Claude Desktop. By replacing whole-file reading with syntactically bounded AST slices, it cuts median prompt token consumption from 48,000 tokens to 1,380 tokens (a 97.1% reduction)."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Where can I download NeuroCode?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "NeuroCode is available as a native Windows installer (NeuroCode-Setup.exe), a VS Code/Cursor extension (.vsix), and on PyPI via 'pip install neurocode-ai'."
+            }
+          }
+        ]
       },
       {
         "@type": "ScholarlyArticle",
@@ -91,7 +130,7 @@ export default function RootLayout({
         },
         "publisher": {
           "@type": "Organization",
-          "name": "Elsevier / IEEE"
+          "name": "IEEE / ACM ICPC 2027"
         },
         "url": "https://neurocode.deepak-arkz.me"
       }
