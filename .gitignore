@@ -23,3 +23,10 @@ build/
 dist/
 data/
 kaggle_multibench_output/
+
+# Next.js & Web
+.next/
+web/.next/
+node_modules/
+web/node_modules/
+

@@ -1,0 +1,8 @@
+{
+  "name": "neurocode-monorepo",
+  "private": true,
+  "scripts": {
+    "build": "cd web && npm install && npm run build && cp -r .next ../.next && cp -r public ../public",
+    "start": "cd web && npm run start"
+  }
+}
